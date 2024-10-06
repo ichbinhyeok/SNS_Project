@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Entity
 @Table(name = "notifications")
-public class Notification {
+public class Notification extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;              // 알림 ID

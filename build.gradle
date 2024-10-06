@@ -1,0 +1,59 @@
+plugins {
+    id 'java' // Java 플러그인
+    id 'org.springframework.boot' version '3.3.4' // Spring Boot 플러그인
+    id 'io.spring.dependency-management' version '1.1.6' // 의존성 관리 플러그인
+}
+
+group = 'com.example' // 그룹 ID
+version = '0.0.1-SNAPSHOT' // 프로젝트 버전
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(23) // Java 23 사용
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor // annotationProcessor를 포함하여 컴파일 전용으로 설정
+    }
+}
+
+repositories {
+    mavenCentral() // Maven Central 저장소 사용
+}
+
+dependencies {
+    // Spring Boot Starter 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA를 위한 Spring Boot Starter
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb' // MongoDB를 위한 Spring Boot Starter
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // Thymeleaf 템플릿 엔진
+    implementation 'org.springframework.boot:spring-boot-starter-web' // 웹 애플리케이션을 위한 Spring Boot Starter
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6' // Thymeleaf와 Spring Security 통합
+
+    // 추가적인 기능을 위한 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket을 위한 Starter
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis를 위한 Spring Boot Starter
+    implementation 'io.springfox:springfox-boot-starter:3.0.0' // Swagger API 문서화를 위한 Starter
+
+    // Lombok 및 개발 도구
+    compileOnly 'org.projectlombok:lombok' // Lombok: 컴파일 전용 (Getter, Setter 자동 생성 등)
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // 개발 중 편리한 기능을 제공하는 DevTools
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client' // MariaDB JDBC 드라이버
+    annotationProcessor 'org.projectlombok:lombok' // Lombok을 위한 어노테이션 프로세서
+
+    // 테스트 관련 의존성
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // Spring Boot의 테스트 Starter
+    testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 지원
+    testImplementation 'org.junit.jupiter:junit-jupiter-api' // JUnit 5 API
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine' // JUnit 5 Engine
+
+
+
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform() // JUnit 플랫폼 사용 설정
+}

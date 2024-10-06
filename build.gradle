@@ -37,6 +37,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis를 위한 Spring Boot Starter
     implementation 'io.springfox:springfox-boot-starter:3.0.0' // Swagger API 문서화를 위한 Starter
 
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+    implementation 'org.yaml:snakeyaml:1.29'
+
+
     // Lombok 및 개발 도구
     compileOnly 'org.projectlombok:lombok' // Lombok: 컴파일 전용 (Getter, Setter 자동 생성 등)
     developmentOnly 'org.springframework.boot:spring-boot-devtools' // 개발 중 편리한 기능을 제공하는 DevTools
@@ -48,6 +52,8 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 지원
     testImplementation 'org.junit.jupiter:junit-jupiter-api' // JUnit 5 API
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine' // JUnit 5 Engine
+
+
 
 
 

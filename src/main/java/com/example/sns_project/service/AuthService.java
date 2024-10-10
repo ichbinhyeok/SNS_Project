@@ -3,27 +3,62 @@ package com.example.sns_project.service;
 // 사용자 인증 및 권한 관리를 처리하는 서비스
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.model.Role; // Role 임포트
+import com.example.sns_project.model.User;
+import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
 import com.example.sns_project.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Optional;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;  // UserRepository 의존성 주입
+    private final RoleRepository roleRepository;  // RoleRepository 의존성 주입
+    private final BCryptPasswordEncoder passwordEncoder; // 비밀번호 암호화를 위한 인코더
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder(); // 비밀번호 인코더 초기화
     }
 
     public String login(LoginRequest loginRequest) {
-        // 로그인 처리 로직 (비밀번호 확인, JWT 발급 등)
-        return "JWT_TOKEN";  // JWT 토큰 반환
+        // 사용자 조회
+        Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            // 비밀번호 확인
+            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                // 인증 성공 (세션 관리 등은 Spring Security가 처리)
+                return "로그인 성공"; // 로그인 성공 메시지 반환
+            }
+        }
+        return "로그인 실패"; // 로그인 실패 메시지 반환
     }
 
     public UserDTO register(UserDTO userDTO) {
-        // 사용자 등록 처리 로직 (유효성 검사 후 저장)
-        return userDTO;  // 등록된 사용자 반환
+        // UserDTO를 User 엔티티로 변환
+        User user = new User();
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        // 비밀번호를 암호화하여 저장
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+
+        // 기본 역할 설정 (예: ROLE_USER)
+        Role userRole = roleRepository.findByName("ROLE_USER") // ROLE_USER 역할을 가져옴
+                .orElseThrow(() -> new RuntimeException("기본 역할이 존재하지 않습니다."));
+        user.setRoles(Collections.singletonList(userRole)); // 역할 설정
+
+        // 사용자 저장
+        userRepository.save(user);
+
+        return userDTO; // 등록된 사용자 DTO 반환
     }
 
-    // 앞으로: 비밀번호 암호화 및 검증 로직 추가
+    // 앞으로: 비밀번호 검증 로직 및 예외 처리 추가
 }

@@ -3,9 +3,13 @@ package com.example.sns_project.model;
 // 게시글 정보를 저장하는 엔티티 클래스
 // 데이터베이스와 매핑됩니다.
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Setter
 @Getter
 @Entity

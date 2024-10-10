@@ -19,9 +19,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
-        // 로그인 처리 로직
-        String token = authService.login(loginRequest);  // 로그인 후 JWT 토큰 반환
-        return ResponseEntity.ok(token);  // JWT 토큰을 응답으로 반환
+        // Spring Security에 의해 처리되므로, 별도로 로그인 처리가 필요 없음
+        return ResponseEntity.ok("로그인 성공");  // 로그인 성공 메시지 반환
     }
 
     @PostMapping("/register")

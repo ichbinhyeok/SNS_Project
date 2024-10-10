@@ -35,6 +35,10 @@ dependencies {
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
 
+
+    implementation 'io.jsonwebtoken:jjwt:0.9.1' // 최신 버전을 확인하고 필요에 따라 업데이트하세요
+
+
     // 추가적인 기능을 위한 의존성
     implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket을 위한 Starter
     implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis를 위한 Spring Boot Starter
@@ -53,6 +57,14 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 지원
     testImplementation 'org.junit.jupiter:junit-jupiter-api' // JUnit 5 API
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine' // JUnit 5 Engine
+
+
+
+
+    implementation 'javax.xml.bind:jaxb-api:2.3.1' // JAXB API
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1' // JAXB Runtime
+
+
 }
 
 tasks.named('test') {

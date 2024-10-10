@@ -1,15 +1,16 @@
 package com.example.sns_project.model;
 
-// 사용자 정보를 저장하는 엔티티 클래스
-// 데이터베이스와 매핑됩니다.
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "users")
-public class User extends BaseEntity{
+public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;              // 사용자 ID
@@ -23,7 +24,11 @@ public class User extends BaseEntity{
     @Column(nullable = false)
     private String password;      // 사용자 비밀번호
 
-    // Getter 및 Setter 메서드
-
-    // 앞으로: JPA 어노테이션 추가 및 관계 설정
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private List<Role> roles;     // 사용자의 역할 리스트
 }

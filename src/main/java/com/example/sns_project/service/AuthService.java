@@ -52,7 +52,9 @@ public class AuthService {
         // 기본 역할 설정 (예: ROLE_USER)
         Role userRole = roleRepository.findByName("ROLE_USER") // ROLE_USER 역할을 가져옴
                 .orElseThrow(() -> new RuntimeException("기본 역할이 존재하지 않습니다."));
-        user.setRoles(Collections.singletonList(userRole)); // 역할 설정
+
+        // Set<Role>으로 설정
+        user.getRoles().add(userRole); // 역할을 Set에 추가
 
         // 사용자 저장
         userRepository.save(user);

@@ -3,6 +3,7 @@ package com.example.sns_project.controller;
 // 게시글 관련 API를 처리하는 컨트롤러
 import com.example.sns_project.dto.PostDTO;
 import com.example.sns_project.service.PostService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,9 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO postDTO) {
         // 게시글 작성 로직
-        return ResponseEntity.ok(postService.createPost(postDTO));
+
+        PostDTO createPost = postService.createPost(postDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createPost);
     }
 
     @GetMapping("/{id}")

@@ -24,9 +24,4 @@ logging:
     root: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
-
-# security:
-#   user:
-#     name: user
-#     password: password
+    org.springframework.web: DEBUG  # HTTP 요청 및 응답 로그

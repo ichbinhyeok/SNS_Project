@@ -1,5 +1,6 @@
 package com.example.sns_project.repository;
 
+
 // 댓글 데이터 접근을 위한 JPA 레포지토리
 import com.example.sns_project.model.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;

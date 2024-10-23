@@ -1,9 +1,30 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/SNS
-    username: root
-    password: 1234
-    driver-class-name: org.mariadb.jdbc.Driver
+      jdbc-url: jdbc:mariadb://localhost:3306/SNS
+      username: root
+      password: 1234
+      driver-class-name: org.mariadb.jdbc.Driver
+
+  datasource-meta:
+      jdbc-url: jdbc:mariadb://localhost:3306/meta_db
+      username: root
+      password: 1234
+      driver-class-name: org.mariadb.jdbc.Driver
+
+  datasource-data:
+      jdbc-url: jdbc:mariadb://localhost:3306/data_db
+      username: root
+      password: 1234
+      driver-class-name: org.mariadb.jdbc.Driver
+
+
+
+  ## 프로젝트 실행할때마다 배치가 자동실행 되는 것을 막음
+  batch:
+    job:
+      enabled: false
+
+
 
   jpa:
     hibernate:
@@ -12,6 +33,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 100  # JPA 배치 사이즈 (배치 처리용)
+        order_inserts: true
+        order_updates: true
 
   application:
     name: sns_project

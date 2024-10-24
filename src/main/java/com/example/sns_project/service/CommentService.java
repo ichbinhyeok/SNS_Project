@@ -67,7 +67,7 @@ public class CommentService {
     }
 
     // 댓글 삭제
-     @Transactional
+    @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
@@ -147,6 +147,55 @@ public class CommentService {
         return parentComment.getChildrenComments().stream()
                 .map(reply -> new CommentDTO(reply.getId(), reply.getPost().getId(), reply.getContent(), reply.getUser().getId()))
                 .collect(Collectors.toList());
+
+    }
+    // 앞으로 구현할 기능
+
+    // 1. 댓글 검색 기능
+    public List<CommentDTO> searchComments(Long postId, String keyword) {
+        // 댓글 검색 로직
+        return null; // 실제 구현 필요
+    }
+
+    // 2. 댓글 신고 기능
+    @Transactional
+    public void reportComment(Long commentId, Long userId, String reason) {
+        // 댓글 신고 처리 로직
+    }
+
+    // 3. 댓글 수정 기록 기능
+    @Transactional
+    public CommentDTO updateCommentWithHistory(Long commentId, CommentDTO commentDTO) {
+        // 댓글 수정 기록 추가 로직
+        return null; // 실제 구현 필요
+    }
+
+    // 4. 댓글 좋아요 통계 기능
+    public int getCommentLikesCount(Long commentId) {
+        // 댓글 좋아요 수 조회 로직
+        return 0; // 실제 구현 필요
+    }
+
+    // 5. 댓글 알림 설정 기능
+    public void toggleCommentNotification(Long commentId, Long userId) {
+        // 댓글 알림 설정/해제 로직
+    }
+
+    // 6. 댓글에 대한 접근 제어 기능
+    public void setCommentAccessControl(Long commentId, List<Long> allowedUserIds) {
+        // 댓글 접근 제어 설정 로직
+    }
+
+    // 7. 댓글 스팸 필터링 기능
+    public void filterSpamComments(Long postId) {
+        // 스팸 댓글 필터링 로직
+    }
+
+    // 8. 댓글 정렬 기능
+    public List<CommentDTO> getSortedComments(Long postId, String sortOrder) {
+        // 댓글 정렬 로직
+        return null; // 실제 구현 필요
     }
 }
+
 

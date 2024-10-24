@@ -27,6 +27,7 @@ public class PostService {
     private final CommentService commentService;
     private final NotificationService notificationService;
 
+    // 현재 구현된 기능: 게시물 생성
     @Transactional
     public PostDTO createPost(PostDTO postDTO) {
         Post post = new Post();
@@ -40,6 +41,7 @@ public class PostService {
         return convertToDTO(post, user);
     }
 
+    // 현재 구현된 기능: 게시물 수정
     @Transactional
     public PostDTO updatePost(Long postId, PostDTO postDTO) {
         Post post = postRepository.findById(postId)
@@ -51,6 +53,7 @@ public class PostService {
         return convertToDTO(post, post.getUser());
     }
 
+    // 현재 구현된 기능: 게시물 삭제
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
@@ -58,6 +61,7 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    // 현재 구현된 기능: 게시물 ID로 조회
     @Transactional
     public PostDTO getPostById(Long id) {
         Post post = postRepository.findById(id)
@@ -65,6 +69,7 @@ public class PostService {
         return convertToDTO(post, post.getUser());
     }
 
+    // 현재 구현된 기능: 특정 사용자 ID로 게시물 조회
     public List<PostDTO> getPostByUserId(Long userId) {
         List<Post> posts = postRepository.findByUserId(userId);
         return posts.stream()
@@ -72,10 +77,12 @@ public class PostService {
                 .collect(Collectors.toUnmodifiableList());
     }
 
+    // 현재 구현된 기능: 게시물에 대한 댓글 조회
     public List<CommentDTO> getCommentsByPostId(Long postId) {
         return commentService.getCommentsByPostId(postId);
     }
 
+    // 현재 구현된 기능: 게시물 좋아요 기능
     @Transactional
     public void likePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
@@ -94,6 +101,7 @@ public class PostService {
         postRepository.save(post);
     }
 
+    // 현재 구현된 기능: 게시물 좋아요 취소
     @Transactional
     public void unlikePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
@@ -110,6 +118,7 @@ public class PostService {
         postRepository.save(post);
     }
 
+    // 현재 구현된 기능: 게시물에 댓글 추가
     @Transactional
     public CommentDTO addComment(Long postId, Long userId, String content) {
         Post post = postRepository.findById(postId)
@@ -142,12 +151,59 @@ public class PostService {
         );
     }
 
+    // 현재 구현된 기능: 모든 게시물 조회
     public List<PostDTO> getAllPosts() {
         List<Post> posts = postRepository.findAll();
         return posts.stream()
                 .map(post -> convertToDTO(post, post.getUser()))
                 .toList();
     }
+
+    // 앞으로 구현될 기능: 게시물 검색 기능
+    public List<PostDTO> searchPosts(String keyword) {
+        // 키워드로 제목 또는 내용 검색
+        return null; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물 필터링 기능
+    public List<PostDTO> getFilteredPosts(Long userId, String filter) {
+        // 친구의 게시물, 최신순 등으로 필터링
+        return null; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물 수정 기록 기능
+    public void addEditHistory(Long postId) {
+        // 게시물 수정 기록 추가
+        return; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물 신고 기능
+    public void reportPost(Long postId, Long userId, String reason) {
+        // 게시물 신고 처리
+        return; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물 통계 기능
+//    public PostStatisticsDTO getPostStatistics(Long postId) {
+//        // 게시물 통계 반환
+//        return null; // 실제 구현 필요
+//    }
+
+    // 앞으로 구현될 기능: 게시물 알림 관리 기능
+    public void togglePostNotification(Long postId, Long userId) {
+        // 게시물 알림 설정 관리
+        return; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물에 대한 액세스 제어 기능
+    public void setPostAccessControl(Long postId, List<Long> allowedUserIds) {
+        // 특정 사용자만 게시물 접근 허용
+        return; // 실제 구현 필요
+    }
+
+    // 앞으로 구현될 기능: 게시물 버전 관리 기능
+    public void managePostVersion(Long postId) {
+        // 게시물 버전 관리
+        return; // 실제 구현 필요
+    }
 }
-
-

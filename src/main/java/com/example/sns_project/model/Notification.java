@@ -1,7 +1,7 @@
 package com.example.sns_project.model;
 
 // 알림 정보를 저장하는 엔티티 클래스
-// 데이터베이스와 매핑됩니다.
+import com.example.sns_project.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Entity
 @Table(name = "notifications")
-public class Notification extends BaseEntity{
+public class Notification extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;              // 알림 ID
@@ -18,10 +18,16 @@ public class Notification extends BaseEntity{
     @Column(nullable = false)
     private String message;       // 알림 내용
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;          // 수신자 ID
+    @ManyToOne(fetch = FetchType.LAZY) // User와의 연관관계 설정
+    @JoinColumn(name = "user_id", nullable = false) // 외래 키 설정
+    private User user;            // 수신자 객체
 
-    // Getter 및 Setter 메서드
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead = false; // 알림 읽음 여부
 
-    // 앞으로: JPA 어노테이션 추가 및 관계 설정
+    @Enumerated(EnumType.STRING) // 열거형으로 설정
+    @Column(name = "notification_type") // 알림 유형
+    private NotificationType notificationType; // 알림 유형을 열거형으로 변경
+
+    // JPA 어노테이션 추가 및 관계 설정
 }

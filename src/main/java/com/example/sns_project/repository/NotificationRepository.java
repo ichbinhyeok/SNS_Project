@@ -8,5 +8,7 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     List<Notification> findByUserId(Long userId);  // 사용자 ID로 알림 조회
     List<Notification>findByUserIdAndIsRead(Long userId, boolean bool);
+
+
     // 앞으로: 추가적인 쿼리 메서드 정의 (예: 알림 삭제 등)
 }

@@ -1,6 +1,5 @@
 package com.example.sns_project.controller;
 
-// 게시글 관련 API를 처리하는 컨트롤러
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
 import com.example.sns_project.service.PostService;
@@ -18,7 +17,7 @@ import java.util.List;
 @Tag(name = "게시글 API", description = "게시글 관련 기능")
 public class PostController {
 
-    private final PostService postService;  // PostService 의존성 주입
+    private final PostService postService;
 
     public PostController(PostService postService) {
         this.postService = postService;

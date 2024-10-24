@@ -23,32 +23,24 @@ public class UserService {
     }
 
     public UserDTO getUserById(Long id) {
-        // 사용자 정보 조회 로직
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found")); // 사용자 조회
-
-        // User 엔티티를 UserDTO로 변환하여 반환 (비밀번호 제외)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 
     public UserDTO updateUser(Long id, UserDTO userDTO, UserPasswordUpdateDTO passwordDTO) {
-        // 사용자 정보 수정 로직
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found")); // 사용자 조회
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 수정할 정보 설정
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
 
-        // 비밀번호가 제공된 경우에만 암호화하여 설정
         if (passwordDTO.getPassword() != null && !passwordDTO.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(passwordDTO.getPassword())); // 비밀번호 암호화
+            user.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
         }
 
-        // 사용자 정보 저장
         userRepository.save(user);
 
-        // 수정된 사용자 DTO 반환 (비밀번호 제외)
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 

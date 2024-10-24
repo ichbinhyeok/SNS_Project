@@ -3,6 +3,7 @@ package com.example.sns_project.service;
 // 댓글 관련 비즈니스 로직을 처리하는 서비스
 
 import com.example.sns_project.dto.CommentDTO;
+import com.example.sns_project.dto.UserDTO; // UserDTO 추가
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.Comment;
 import com.example.sns_project.model.CommentLike;
@@ -43,17 +44,20 @@ public class CommentService {
         Comment comment = new Comment();
         comment.setPost(post); // 댓글이 속한 게시글 설정
         comment.setContent(commentDTO.getContent());
-        comment.setAuthorId(commentDTO.getAuthorId());
+
+        // User 객체를 가져와서 설정
+        User user = userService.findById(commentDTO.getAuthorId()); // UserDTO에서 ID 가져오기
+        comment.setUser(user); // User 객체 설정
 
         commentRepository.save(comment);  // 데이터베이스에 저장
-        return commentDTO;  // 작성한 댓글 반환
+        return new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), user.getId());  // 작성한 댓글 반환
     }
 
     // 게시글에 대한 댓글 조회
     public List<CommentDTO> getCommentsByPostId(Long postId) {
         List<Comment> comments = commentRepository.findByPostId(postId);
         return comments.stream()
-                .map(comment -> new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), comment.getAuthorId()))
+                .map(comment -> new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), comment.getUser().getId())) // UserDTO의 ID 사용
                 .collect(Collectors.toList());
     }
 
@@ -77,9 +81,9 @@ public class CommentService {
 
     // 특정 사용자의 댓글 조회
     public List<CommentDTO> getCommentsByUserId(Long userId) {
-        List<Comment> comments = commentRepository.findByAuthorId(userId);
+        List<Comment> comments = commentRepository.findByUserId(userId); // User ID로 댓글 조회
         return comments.stream()
-                .map(comment -> new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), comment.getAuthorId()))
+                .map(comment -> new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), comment.getUser().getId())) // UserDTO의 ID 사용
                 .collect(Collectors.toList());
     }
 
@@ -119,8 +123,7 @@ public class CommentService {
         commentRepository.save(comment); // 변경사항 저장
     }
 
-
-    //대댓글
+    // 대댓글
     @Transactional
     public CommentDTO addReply(Long parentCommentId, CommentDTO replyDTO) {
         // 부모 댓글 조회
@@ -130,7 +133,10 @@ public class CommentService {
         // 대댓글 생성
         Comment replyComment = new Comment();
         replyComment.setContent(replyDTO.getContent());
-        replyComment.setAuthorId(replyDTO.getAuthorId());
+
+        // User 객체를 가져와서 설정
+        User user = userService.findById(replyDTO.getAuthorId()); // UserDTO에서 ID 가져오기
+        replyComment.setUser(user); // User 객체 설정
         replyComment.setPost(parentComment.getPost()); // 같은 게시글에 속하도록 설정
         replyComment.setParentComment(parentComment); // 부모 댓글 설정
 
@@ -141,16 +147,15 @@ public class CommentService {
         return replyDTO; // 생성된 대댓글 정보 반환
     }
 
-    //부모댓글의 대댓글 조회
+    // 부모 댓글의 대댓글 조회
     public List<CommentDTO> getReplies(Long parentCommentId) {
         Comment parentComment = commentRepository.findById(parentCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent comment not found"));
 
         return parentComment.getChildrenComments().stream()
-                .map(reply -> new CommentDTO(reply.getId(), reply.getPost().getId(), reply.getContent(), reply.getAuthorId()))
+                .map(reply -> new CommentDTO(reply.getId(), reply.getPost().getId(), reply.getContent(), reply.getUser().getId())) // UserDTO의 ID 사용
                 .collect(Collectors.toList());
     }
-
 
     // 앞으로: 댓글 좋아요 기능 추가
 }

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
-    List<Post> findByAuthorId(Long authorId);  // 작성자 ID로 게시글 조회
+    List<Post> findByUserId(Long authorId);  // user ID로 게시글 조회
     List<Post> findAllByOrderByCreatedDateDesc(); // 최신 게시글 정렬
 
     // 앞으로: 추가적인 쿼리 메서드 정의 (예: 게시글 삭제 등)

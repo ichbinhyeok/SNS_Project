@@ -1,8 +1,10 @@
 package com.example.sns_project.service;
 
 // 게시글 관련 비즈니스 로직을 처리하는 서비스
+
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
+import com.example.sns_project.dto.UserDTO; // UserDTO 추가
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.*;
 import com.example.sns_project.repository.CommentRepository;
@@ -12,7 +14,6 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,9 +33,16 @@ public class PostService {
         Post post = new Post();
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
-        post.setAuthorId(postDTO.getAuthorId());
+
+        // User 객체를 가져와서 설정
+        User user = userService.findById(postDTO.getAuthor().getId()); // UserDTO에서 ID 가져오기
+        post.setUser(user);  // User 객체 설정
         postRepository.save(post);  // 데이터베이스에 저장
-        return postDTO;  // 작성한 게시글 반환
+
+        // 작성한 게시글 반환
+        return new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                new UserDTO(user.getId(), user.getUsername(), user.getEmail()),
+                null);
     }
 
     // 게시글 수정
@@ -45,7 +53,11 @@ public class PostService {
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
         postRepository.save(post);  // 변경된 게시글 저장
-        return postDTO;  // 수정된 게시글 반환
+
+        // 수정된 게시글 반환
+        return new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                new UserDTO(post.getUser().getId(), post.getUser().getUsername(), post.getUser().getEmail()),
+                null);
     }
 
     // 게시글 삭제
@@ -61,14 +73,18 @@ public class PostService {
     public PostDTO getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
-        return new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null);
+        return new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                new UserDTO(post.getUser().getId(), post.getUser().getUsername(), post.getUser().getEmail()),
+                null);
     }
 
     // 특정 사용자의 게시글 조회
     public List<PostDTO> getPostByUserId(Long userId) {
-        List<Post> posts = postRepository.findByAuthorId(userId);
+        List<Post> posts = postRepository.findByUserId(userId);
         return posts.stream()
-                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null))
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                        new UserDTO(post.getUser().getId(), post.getUser().getUsername(), post.getUser().getEmail()),
+                        null))
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -76,7 +92,6 @@ public class PostService {
     public List<CommentDTO> getCommentsByPostId(Long postId) {
         return commentService.getCommentsByPostId(postId); // CommentService를 통해 호출
     }
-
 
     // 게시글 좋아요
     @Transactional
@@ -114,7 +129,7 @@ public class PostService {
 
     // 댓글 추가
     @Transactional
-    public Comment addComment(Long postId, long userId, String content) {
+    public CommentDTO addComment(Long postId, long userId, String content) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         User user = userService.findById(userId);
@@ -122,13 +137,14 @@ public class PostService {
         Comment comment = new Comment();
         comment.setContent(content);
         comment.setPost(post);
-        comment.setAuthorId(userId);
+        comment.setUser(user); // User 객체 설정
 
         post.getComments().add(comment); // 게시글의 댓글 목록에 추가
         user.getComments().add(comment); // 사용자의 댓글 목록에 추가
         postRepository.save(post); // 게시글에 변경사항 저장
 
-        return comment; // 추가된 댓글 반환
+        // CommentDTO로 변환하여 반환
+        return new CommentDTO(comment.getId(), postId, comment.getContent(), user.getId());
     }
 
     // 댓글 좋아요
@@ -169,7 +185,9 @@ public class PostService {
     public List<PostDTO> getAllPosts() {
         List<Post> posts = postRepository.findAll();
         return posts.stream()
-                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null))
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                        new UserDTO(post.getUser().getId(), post.getUser().getUsername(), post.getUser().getEmail()),
+                        null))
                 .collect(Collectors.toUnmodifiableList());
     }
 }

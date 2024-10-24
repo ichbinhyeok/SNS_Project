@@ -10,14 +10,13 @@ import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
-
 @Setter
 @Getter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "comments")
-public class Comment extends BaseEntity{
+public class Comment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;              // 댓글 ID
@@ -29,21 +28,17 @@ public class Comment extends BaseEntity{
     @Column(nullable = false)
     private String content;       // 댓글 내용
 
-    @Column(name = "author_id", nullable = false)
-    private Long authorId;        // 작성자 ID
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false) // 작성자 ID를 참조
+    private User user;            // 작성자
 
-    @OneToMany(mappedBy = "parentComment",cascade = CascadeType.ALL,orphanRemoval = true)
-    private Set<Comment> childrenComments = new HashSet<>(); //대댓글 목록
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> childrenComments = new HashSet<>(); // 대댓글 목록
 
     @ManyToOne
     @JoinColumn(name = "parent_comment_id")
-    private Comment parentComment; //부모 댓글
+    private Comment parentComment; // 부모 댓글
 
-
-    @OneToMany(mappedBy = "comment",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CommentLike> likes = new HashSet<>(); // 댓글의 좋아요 목록
-
-    // Getter 및 Setter 메서드
-
-    // 앞으로: JPA 어노테이션 추가 및 관계 설정
 }

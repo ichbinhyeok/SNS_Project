@@ -77,4 +77,41 @@ public class NotificationService {
     public void sendDefaultNotification(Long userId, String message) {
         sendNotification(userId, message, NotificationType.DEFAULT); // 열거형 사용
     }
+
+    // 포스트에 댓글 알림 전송
+    public void sendPostCommentNotification(Long postOwnerId, String username) {
+        String message = username + "님이 당신의 포스트에 댓글을 달았습니다.";
+        sendNotification(postOwnerId, message, NotificationType.COMMENT);
+    }
+
+    // 포스트에 좋아요 알림 전송
+    public void sendPostLikeNotification(Long postOwnerId, String username) {
+        String message = username + "님이 당신의 포스트에 좋아요를 눌렀습니다.";
+        sendNotification(postOwnerId, message, NotificationType.LIKE);
+    }
+
+
+    // 댓글 알림 전송
+    public void sendCommentNotification(Long postOwnerId, String username) {
+        String message = username + "님이 당신의 댓글에 댓글을 달았습니다.";
+        sendNotification(postOwnerId, message, NotificationType.COMMENT);
+    }
+
+    // 댓글 좋아요 알림 전송
+    public void sendCommentLikeNotification(Long commentOwnerId, String username) {
+        String message = username + "님이 당신의 댓글에 좋아요를 눌렀습니다.";
+        sendNotification(commentOwnerId, message, NotificationType.LIKE);
+    }
+
+    // 친구 요청 알림 전송
+    public void sendFriendRequestNotification(Long senderId, Long receiverId) {
+        String message = "사용자 " + senderId + "님이 친구 요청을 보냈습니다.";
+        sendNotification(receiverId, message, NotificationType.FRIEND_REQUEST);
+    }
+
+    // 친구 추가 알림 전송
+    public void sendFriendAddedNotification(Long userId, Long friendId) {
+        String message = "사용자 " + friendId + "님과 친구가 되었습니다.";
+        sendNotification(userId, message, NotificationType.DEFAULT);
+    }
 }

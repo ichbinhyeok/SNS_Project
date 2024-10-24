@@ -44,8 +44,7 @@ public class CommentService {
         commentRepository.save(comment);
 
         // 알림 생성
-        String message = user.getUsername() + "님이 당신의 댓글에 댓글을 달았습니다.";
-        notificationService.sendNotification(post.getUser().getId(), message, NotificationType.COMMENT);
+        notificationService.sendCommentNotification(post.getUser().getId(), user.getUsername());
         return new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), user.getId());
     }
 
@@ -92,8 +91,7 @@ public class CommentService {
         commentRepository.save(comment);
 
         // 알림 생성
-        String message = user.getUsername() + "님이 당신의 댓글에 좋아요를 눌렀습니다.";
-        notificationService.sendNotification(comment.getUser().getId(), message, NotificationType.LIKE);
+        notificationService.sendCommentLikeNotification(comment.getUser().getId(), user.getUsername());
     }
 
     // 대댓글 좋아요 기능 추가

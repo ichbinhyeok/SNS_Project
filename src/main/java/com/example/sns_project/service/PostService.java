@@ -89,8 +89,7 @@ public class PostService {
         user.getLikedPosts().add(postLike);
 
         // 알림 생성
-        String message = user.getUsername() + "님이 당신의 포스트에 좋아요를 눌렀습니다.";
-        notificationService.sendNotification(post.getUser().getId(), message, NotificationType.LIKE);
+        notificationService.sendPostLikeNotification(post.getUser().getId(), user.getUsername());
 
         postRepository.save(post);
     }
@@ -126,9 +125,7 @@ public class PostService {
         postRepository.save(post); // 게시글에 변경사항 저장
 
         // 알림 생성
-        String message = user.getUsername() + "님이 당신의 포스트에 댓글을 달았습니다.";
-        notificationService.sendNotification(post.getUser().getId(), message, NotificationType.COMMENT);
-
+        notificationService.sendPostCommentNotification(post.getUser().getId(), user.getUsername());
 
         // CommentDTO로 변환하여 반환
         return new CommentDTO(comment.getId(), postId, comment.getContent(), user.getId());

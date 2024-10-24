@@ -9,14 +9,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-// 사용자 정보를 전송하기 위한 데이터 전송 객체
-// API 요청 및 응답에 사용됩니다.
-public class UserDTO {
-    private Long id;              // 사용자 ID
+// 사용자 등록 정보를 전송하기 위한 데이터 전송 객체
+public class UserRegistrationDTO {
     private String username;      // 사용자 이름
     private String email;         // 사용자 이메일
-
-    // Getter 및 Setter 메서드
-
-    // 앞으로: 유효성 검사 애너테이션 추가 (예: @NotNull, @Email)
+    private String password;      // 사용자 비밀번호
 }

@@ -2,6 +2,7 @@ package com.example.sns_project.controller;
 
 // 사용자 관련 API를 처리하는 컨트롤러
 import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.dto.UserPasswordUpdateDTO; // 비밀번호 수정 DTO 추가
 import com.example.sns_project.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +24,12 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserDTO userDTO,
+            @RequestBody UserPasswordUpdateDTO passwordDTO) { // 비밀번호 DTO 추가
         // 사용자 정보 수정 로직
-        return ResponseEntity.ok(userService.updateUser(id, userDTO));
+        return ResponseEntity.ok(userService.updateUser(id, userDTO, passwordDTO));
     }
 
     // 앞으로: 유효성 검사 및 예외 처리 추가 필요

@@ -2,6 +2,7 @@ package com.example.sns_project.service;
 
 // 사용자 관련 비즈니스 로직을 처리하는 서비스
 import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.User;
 import com.example.sns_project.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -48,5 +49,10 @@ public class UserService {
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), null);
     }
 
+
+    public User findById(Long userId){
+
+        return userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("User not found"));
+    }
     // 앞으로: 유효성 검사 및 예외 처리 추가
 }

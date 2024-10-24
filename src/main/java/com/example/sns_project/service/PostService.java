@@ -1,23 +1,34 @@
 package com.example.sns_project.service;
 
 // 게시글 관련 비즈니스 로직을 처리하는 서비스
+import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
 import com.example.sns_project.exception.ResourceNotFoundException;
-import com.example.sns_project.model.Post;
+import com.example.sns_project.model.*;
+import com.example.sns_project.repository.CommentRepository;
 import com.example.sns_project.repository.PostRepository;
+import com.example.sns_project.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@AllArgsConstructor
 @Service
 public class PostService {
 
     private final PostRepository postRepository;  // PostRepository 의존성 주입
+    private final UserService userService;        // UserService 의존성 주입
+    private final UserRepository userRepository;  // UserRepository 의존성 주입
+    private final CommentRepository commentRepository; // CommentRepository 의존성 주입
+    private final CommentService commentService;
 
-    public PostService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
-
+    // 게시글 생성
+    @Transactional
     public PostDTO createPost(PostDTO postDTO) {
-        // 게시글 작성 로직
         Post post = new Post();
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
@@ -26,12 +37,139 @@ public class PostService {
         return postDTO;  // 작성한 게시글 반환
     }
 
-    public PostDTO getPostById(Long id) {
-        // 게시글 조회 로직
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));  // 예외 처리
-        return new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId());
+    // 게시글 수정
+    @Transactional
+    public PostDTO updatePost(Long postId, PostDTO postDTO) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        post.setTitle(postDTO.getTitle());
+        post.setContent(postDTO.getContent());
+        postRepository.save(post);  // 변경된 게시글 저장
+        return postDTO;  // 수정된 게시글 반환
     }
 
-    // 앞으로: 게시글 수정, 삭제, 목록 조회 메서드 추가
+    // 게시글 삭제
+    @Transactional
+    public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        postRepository.delete(post);  // 게시글 삭제
+    }
+
+    // 게시글 조회
+    @Transactional
+    public PostDTO getPostById(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        return new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null);
+    }
+
+    // 특정 사용자의 게시글 조회
+    public List<PostDTO> getPostByUserId(Long userId) {
+        List<Post> posts = postRepository.findByAuthorId(userId);
+        return posts.stream()
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    // 게시글에 대한 댓글 조회 (CommentService를 통해 호출)
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
+        return commentService.getCommentsByPostId(postId); // CommentService를 통해 호출
+    }
+
+
+    // 게시글 좋아요
+    @Transactional
+    public void likePost(Long postId, long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        User user = userService.findById(userId);
+
+        // 좋아요 추가
+        PostLike postLike = new PostLike();
+        postLike.setPost(post);
+        postLike.setUser(user);
+        post.getLikes().add(postLike); // 게시글의 좋아요 목록에 추가
+        user.getLikedPosts().add(postLike); // 사용자의 좋아요 목록에 추가
+        postRepository.save(post); // 변경사항 저장
+    }
+
+    // 게시글 좋아요 취소
+    @Transactional
+    public void unlikePost(Long postId, long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        User user = userService.findById(userId);
+
+        // 좋아요를 찾고 제거
+        PostLike postLike = post.getLikes().stream()
+                .filter(like -> like.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("User has not liked this post"));
+
+        post.getLikes().remove(postLike); // 게시글의 좋아요 목록에서 제거
+        user.getLikedPosts().remove(postLike); // 사용자의 좋아요 목록에서 제거
+        postRepository.save(post); // 변경사항 저장
+    }
+
+    // 댓글 추가
+    @Transactional
+    public Comment addComment(Long postId, long userId, String content) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        User user = userService.findById(userId);
+
+        Comment comment = new Comment();
+        comment.setContent(content);
+        comment.setPost(post);
+        comment.setAuthorId(userId);
+
+        post.getComments().add(comment); // 게시글의 댓글 목록에 추가
+        user.getComments().add(comment); // 사용자의 댓글 목록에 추가
+        postRepository.save(post); // 게시글에 변경사항 저장
+
+        return comment; // 추가된 댓글 반환
+    }
+
+    // 댓글 좋아요
+    @Transactional
+    public void likeComment(Long commentId, Long userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        User user = userService.findById(userId);
+
+        CommentLike commentLike = new CommentLike();
+        commentLike.setComment(comment);
+        commentLike.setUser(user);
+        comment.getLikes().add(commentLike); // 댓글의 좋아요 목록에 추가
+        user.getLikedComments().add(commentLike); // 사용자의 댓글 좋아요 목록에 추가
+        commentRepository.save(comment); // 변경사항 저장
+    }
+
+    // 댓글 좋아요 취소
+    @Transactional
+    public void unlikeComment(Long commentId, Long userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        User user = userService.findById(userId);
+
+        // 좋아요를 찾고 제거
+        CommentLike commentLike = comment.getLikes().stream()
+                .filter(like -> like.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("User has not liked this comment"));
+
+        comment.getLikes().remove(commentLike); // 댓글의 좋아요 목록에서 제거
+        user.getLikedComments().remove(commentLike); // 사용자의 댓글 좋아요 목록에서 제거
+        commentRepository.save(comment); // 변경사항 저장
+    }
+
+    // 추가적인 기능 제안
+    // 예를 들어, 게시글 목록 조회 기능을 추가할 수 있습니다.
+    public List<PostDTO> getAllPosts() {
+        List<Post> posts = postRepository.findAll();
+        return posts.stream()
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getAuthorId(), null))
+                .collect(Collectors.toUnmodifiableList());
+    }
 }

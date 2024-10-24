@@ -9,6 +9,7 @@ import com.example.sns_project.model.User;
 import com.example.sns_project.repository.PostRepository;
 import com.example.sns_project.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -59,6 +60,7 @@ public class PostControllerTest {
 
     @Test
     @WithMockUser(username = "admin", roles = {"USER"}) // Mock 사용자 인증
+    @DisplayName("Post Insert")
     public void testCreatePost() throws Exception {
         // JSON 형태의 요청 본문 설정
         String newPostJson = "{\"title\":\"New Test Post\", \"content\":\"This is a new test post.\", \"authorId\":" + testUser.getId() + "}";
@@ -74,6 +76,7 @@ public class PostControllerTest {
 
     @Test
     @WithMockUser(username = "admin", roles = {"USER"}) // Mock 사용자 인증
+    @DisplayName("PostId로 Post가져오기")
     public void testGetPostById() throws Exception {
         mockMvc.perform(get("/api/posts/{id}", testPost.getId())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -81,6 +84,8 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.title").value(testPost.getTitle()))
                 .andExpect(jsonPath("$.content").value(testPost.getContent()));
     }
+
+
 
     // @AfterEach 메서드가 필요 없음
 }

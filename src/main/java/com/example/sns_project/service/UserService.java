@@ -2,6 +2,8 @@ package com.example.sns_project.service;
 
 // 사용자 관련 비즈니스 로직을 처리하는 서비스
 import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.dto.UserPasswordUpdateDTO;
+import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.User;
 import com.example.sns_project.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,31 +23,30 @@ public class UserService {
     }
 
     public UserDTO getUserById(Long id) {
-        // 사용자 정보 조회 로직
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 사용자 조회
-
-        // User 엔티티를 UserDTO로 변환하여 반환
-        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), null);
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 
-    public UserDTO updateUser(Long id, UserDTO userDTO) {
-        // 사용자 정보 수정 로직
+    public UserDTO updateUser(Long id, UserDTO userDTO, UserPasswordUpdateDTO passwordDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 사용자 조회
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 수정할 정보 설정
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
-        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userDTO.getPassword())); // 비밀번호 암호화
+
+        if (passwordDTO.getPassword() != null && !passwordDTO.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
         }
 
-        // 사용자 정보 저장
         userRepository.save(user);
 
-        // 수정된 사용자 DTO 반환
-        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), null);
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
+    }
+
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     // 앞으로: 유효성 검사 및 예외 처리 추가

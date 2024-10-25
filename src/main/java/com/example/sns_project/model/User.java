@@ -32,4 +32,20 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>(); // 초기화
+
+    // 사용자가 좋아요를 누른 게시글 목록
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PostLike> likedPosts = new HashSet<>(); // 좋아요 목록
+
+    // 사용자가 좋아요를 누른 댓글 목록
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CommentLike> likedComments = new HashSet<>(); // 댓글 좋아요 목록
+
+    // 사용자가 작성한 댓글 목록
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> comments = new HashSet<>();
+
+    // 사용자가 작성한 게시글 목록
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Post> posts = new HashSet<>();
 }

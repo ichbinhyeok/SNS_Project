@@ -17,6 +17,5 @@ public class CommentDTO {
     private String content;       // 댓글 내용
     private Long authorId;        // 작성자 ID
 
-
 // 앞으로: 유효성 검사 애너테이션 추가 (예: @NotEmpty)
 }

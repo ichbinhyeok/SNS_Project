@@ -3,6 +3,7 @@ package com.example.sns_project.service;
 // 사용자 인증 및 권한 관리를 처리하는 서비스
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.dto.UserRegistrationDTO; // UserRegistrationDTO 추가
 import com.example.sns_project.model.Role; // Role 임포트
 import com.example.sns_project.model.User;
 import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
@@ -41,25 +42,27 @@ public class AuthService {
         return "로그인 실패"; // 로그인 실패 메시지 반환
     }
 
-    public UserDTO register(UserDTO userDTO) {
-        // UserDTO를 User 엔티티로 변환
+    public UserDTO register(UserRegistrationDTO userRegistrationDTO) {
+        // UserRegistrationDTO를 User 엔티티로 변환
         User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
+        user.setUsername(userRegistrationDTO.getUsername());
+        user.setEmail(userRegistrationDTO.getEmail());
+
         // 비밀번호를 암호화하여 저장
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setPassword(passwordEncoder.encode(userRegistrationDTO.getPassword()));
 
         // 기본 역할 설정 (예: ROLE_USER)
         Role userRole = roleRepository.findByName("ROLE_USER") // ROLE_USER 역할을 가져옴
                 .orElseThrow(() -> new RuntimeException("기본 역할이 존재하지 않습니다."));
 
         // Set<Role>으로 설정
-        user.getRoles().add(userRole); // 역할을 Set에 추가
+        user.setRoles(Collections.singleton(userRole)); // 역할을 Set으로 설정
 
         // 사용자 저장
         userRepository.save(user);
 
-        return userDTO; // 등록된 사용자 DTO 반환
+        // UserDTO에 ID 추가하여 반환
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail()); // 등록된 사용자 DTO 반환
     }
 
     // 앞으로: 비밀번호 검증 로직 및 예외 처리 추가

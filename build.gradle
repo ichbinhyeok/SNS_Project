@@ -42,7 +42,8 @@ dependencies {
     // 추가적인 기능을 위한 의존성
     implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket을 위한 Starter
     implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis를 위한 Spring Boot Starter
-    implementation 'org.springdoc:springdoc-openapi-ui:1.6.14' // swager?? 머시기 문서 fox -> springdoc로 바꿈
+//    implementation 'org.springdoc:springdoc-openapi-ui:1.6.14' // swager?? 머시기 문서 fox -> springdoc로 바꿈
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
 
     implementation ('com.github.javafaker:javafaker:1.0.2') { exclude module: 'snakeyaml' }
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'

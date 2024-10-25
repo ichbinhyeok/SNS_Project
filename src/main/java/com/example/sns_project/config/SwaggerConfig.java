@@ -1,19 +1,26 @@
 package com.example.sns_project.config;
 
+// Java
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springdoc.core.GroupedOpenApi;
 
 @Configuration
 public class SwaggerConfig {
-
     @Bean
-    public GroupedOpenApi publicApi() {
-        return GroupedOpenApi.builder()
-                .group("public-api") // 그룹 이름 설정
-                .pathsToMatch("/**") // 문서화할 경로 설정
-                .build();
+    public OpenAPI openAPI() {
+        return new OpenAPI()
+                .components(new Components())
+                .info(apiInfo());
     }
 
-    // 추가적인 설정이나 그룹을 만들 수 있습니다.
+    private Info apiInfo() {
+        return new Info()
+                .title("Springdoc 테스트")
+                .description("Springdoc을 사용한 Swagger UI 테스트")
+                .version("1.0.0");
+    }
 }
+

@@ -8,6 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -25,8 +28,17 @@ public class Post extends BaseEntity{
     @Column(nullable = false)
     private String content;       // 게시글 내용
 
-    @Column(name = "author_id", nullable = false)
-    private Long authorId;        // 작성자 ID
+    @ManyToOne // 여러 개의 게시글이 하나의 사용자에 속함
+    @JoinColumn(name = "user_id", nullable = false) // 외래 키 설정
+    private User user;            // 게시글 작성자
+
+    //게시글에 대한 좋아요 리스트
+    @OneToMany(mappedBy = "post",cascade = CascadeType.ALL,orphanRemoval = true)
+    private Set<PostLike> likes = new HashSet<>();
+
+    //게시글에 대한 댓글 리스트
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> comments = new HashSet<>();
 
     // Getter 및 Setter 메서드
 

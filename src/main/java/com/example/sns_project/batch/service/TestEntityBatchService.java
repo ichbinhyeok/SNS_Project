@@ -13,7 +13,7 @@ public class TestEntityBatchService {
 
     @PersistenceContext
     private EntityManager entityManager;
-
+//
     private static final int BATCH_SIZE = 10000;  // Batch 크기 설정
 
     @Transactional

@@ -12,15 +12,6 @@ spring:
 #  swagger-ui:
 #    path: /swagger-ui.html
 #
-springdoc:
-  packages-to-scan: com.example.sns_project.controller  # 컨트롤러 패키지 경로 수정
-  default-consumes-media-type: application/json;charset=UTF-8
-  default-produces-media-type: application/json;charset=UTF-8
-  swagger-ui:
-    path: /
-    disable-swagger-default-url: true
-    display-request-duration: true
-    operations-sorter: alpha
 
   ## 프로젝트 실행할때마다 배치가 자동실행 되는 것을 막음
   batch:
@@ -48,6 +39,17 @@ server:
 logging:
   level:
     com.example.sns_project.batch.aspect: INFO
+
+springdoc:
+  packages-to-scan: com.example.sns_project.controller  # 컨트롤러 패키지 경로 수정
+  default-consumes-media-type: application/json;charset=UTF-8
+  default-produces-media-type: application/json;charset=UTF-8
+  swagger-ui:
+    path: /
+    disable-swagger-default-url: true
+    display-request-duration: true
+    operations-sorter: alpha
+
 #    root: INFO
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -54,7 +54,7 @@ public class PostControllerTest {
         testPost = new Post();
         testPost.setTitle("Test Post");
         testPost.setContent("This is a test post.");
-        testPost.setAuthorId(testUser.getId()); // authorId 설정
+//        testPost.setAuthorId(testUser.getId()); // authorId 설정
         testPost = postRepository.save(testPost); // 데이터베이스에 저장
     }
 

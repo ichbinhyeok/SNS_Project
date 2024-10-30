@@ -2,9 +2,11 @@ package com.example.sns_project.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Setter
 @Getter
 @MappedSuperclass
 public abstract class BaseEntity {

@@ -12,11 +12,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "comment_likes")
-public class CommentLike {
+public class CommentLike  extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; //좋아요 ID
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @ManyToOne
     @JoinColumn(name = "comment_id", nullable = false)

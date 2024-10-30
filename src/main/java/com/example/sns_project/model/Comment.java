@@ -17,9 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(name = "comments")
 public class Comment extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;              // 댓글 ID
+    // ID 필드는 BaseEntity에서 상속받음
 
     @ManyToOne
     @JoinColumn(name = "post_id", nullable = false)

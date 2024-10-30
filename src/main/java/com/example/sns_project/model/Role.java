@@ -11,9 +11,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "roles")
 public class Role extends BaseEntity{
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;              // 역할 ID
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @Column(nullable = false, unique = true)
     private String name;          // 역할 이름 (예: USER, ADMIN)

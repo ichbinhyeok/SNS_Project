@@ -12,10 +12,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name="post_likes")
-public class PostLike {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; //좋아요 Id
+public class PostLike extends BaseEntity{
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @ManyToOne
     @JoinColumn(name = "post_id",nullable = false)

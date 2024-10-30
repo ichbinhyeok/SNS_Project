@@ -11,9 +11,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "notifications")
 public class Notification extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;              // 알림 ID
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @Column(nullable = false)
     private String message;       // 알림 내용

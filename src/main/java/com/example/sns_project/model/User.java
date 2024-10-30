@@ -12,9 +12,7 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;              // 사용자 ID
+    // ID 필드는 BaseEntity에서 상속받음
 
     @Column(nullable = false, unique = true)
     private String username;      // 사용자 이름

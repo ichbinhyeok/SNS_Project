@@ -8,10 +8,9 @@ import lombok.Setter;
 @Getter
 @Entity
 @Table(name = "friendships")
-public class Friendship {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // 친구 관계 ID
+public class Friendship extends BaseEntity{
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @ManyToOne
     @JoinColumn(name = "user1_id", nullable = false)

@@ -18,9 +18,8 @@ import java.util.Set;
 @Entity
 @Table(name = "posts")
 public class Post extends BaseEntity{
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;              // 게시글 ID
+    // ID 필드는 BaseEntity에서 상속받음
+
 
     @Column(nullable = false)
     private String title;         // 게시글 제목

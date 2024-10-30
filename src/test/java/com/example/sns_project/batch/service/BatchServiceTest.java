@@ -93,7 +93,7 @@ public class BatchServiceTest {
         // Then: 데이터베이스에 데이터가 잘 저장되었는지 확인하고 로그 출력
         long parentCount = parentRepository.count();
         long childCount = childRepository.count();
-        logger.info("총 저장된 Parent 개수: {}", parentCount);
-        logger.info("총 저장된 Child 개수: {}", childCount);
+        logger.info("** 총 저장된 Parent 개수: {}", parentCount);
+        logger.info("** 총 저장된 Child 개수: {}", childCount);
     }
 }

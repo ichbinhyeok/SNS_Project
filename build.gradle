@@ -48,7 +48,7 @@ dependencies {
     implementation ('com.github.javafaker:javafaker:1.0.2') { exclude module: 'snakeyaml' }
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
-    testImplementation 'org.springframework.batch:spring-batch-test'
+
     // Lombok 및 개발 도구
     compileOnly 'org.projectlombok:lombok' // Lombok: 컴파일 전용 (Getter, Setter 자동 생성 등)
     developmentOnly 'org.springframework.boot:spring-boot-devtools' // 개발 중 편리한 기능을 제공하는 DevTools
@@ -60,6 +60,7 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 지원
     testImplementation 'org.junit.jupiter:junit-jupiter-api' // JUnit 5 API
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine' // JUnit 5 Engine
+    testImplementation 'org.springframework.batch:spring-batch-test'
 
 
 

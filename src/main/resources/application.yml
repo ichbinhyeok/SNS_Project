@@ -17,6 +17,8 @@ spring:
   batch:
     job:
       enabled: false
+    jdbc:
+      initialize-schema: always
 
   jpa:
     hibernate:

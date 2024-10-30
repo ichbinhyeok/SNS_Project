@@ -1,7 +1,6 @@
 package com.example.sns_project.service;
 
 import com.example.sns_project.dto.CommentDTO;
-import com.example.sns_project.enums.NotificationType;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.Comment;
 import com.example.sns_project.model.CommentLike;
@@ -12,6 +11,8 @@ import com.example.sns_project.repository.PostRepository;
 import com.example.sns_project.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +28,6 @@ public class CommentService {
     private final UserService userService;
     private final NotificationService notificationService;
 
-
     // 댓글 작성
     @Transactional
     public CommentDTO createComment(CommentDTO commentDTO) {
@@ -38,6 +38,7 @@ public class CommentService {
         comment.setPost(post);
         comment.setContent(commentDTO.getContent());
 
+        // TODO: 현재 사용자 인증 정보 가져오기 및 설정 (스프링 시큐리티 적용 후)
         User user = userService.findById(commentDTO.getAuthorId());
         comment.setUser(user);
 
@@ -61,6 +62,10 @@ public class CommentService {
     public CommentDTO updateComment(Long commentId, CommentDTO commentDTO) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+
+        // TODO: 현재 사용자가 댓글 작성자인지 검증하는 메서드 호출 (스프링 시큐리티 적용 후)
+        validateCommentOwner(comment);
+
         comment.setContent(commentDTO.getContent());
         commentRepository.save(comment);
         return new CommentDTO(comment.getId(), comment.getPost().getId(), comment.getContent(), comment.getUser().getId());
@@ -71,6 +76,10 @@ public class CommentService {
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+
+        // TODO: 현재 사용자가 댓글 작성자인지 검증하는 메서드 호출 (스프링 시큐리티 적용 후)
+        validateCommentOwner(comment);
+
         commentRepository.delete(comment); // 부모 댓글 삭제 시 대댓글도 함께 삭제됨
     }
 
@@ -100,7 +109,6 @@ public class CommentService {
         likeComment(replyId, userId); // 대댓글도 댓글과 동일한 방식으로 처리
     }
 
-
     @Transactional
     public void unlikeComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -128,6 +136,7 @@ public class CommentService {
         Comment replyComment = new Comment();
         replyComment.setContent(replyDTO.getContent());
 
+        // TODO: 현재 사용자 인증 정보 가져오기 및 설정 (스프링 시큐리티 적용 후)
         User user = userService.findById(replyDTO.getAuthorId());
         replyComment.setUser(user);
         replyComment.setPost(parentComment.getPost());
@@ -147,55 +156,17 @@ public class CommentService {
         return parentComment.getChildrenComments().stream()
                 .map(reply -> new CommentDTO(reply.getId(), reply.getPost().getId(), reply.getContent(), reply.getUser().getId()))
                 .collect(Collectors.toList());
-
-    }
-    // 앞으로 구현할 기능
-
-    // 1. 댓글 검색 기능
-    public List<CommentDTO> searchComments(Long postId, String keyword) {
-        // 댓글 검색 로직
-        return null; // 실제 구현 필요
     }
 
-    // 2. 댓글 신고 기능
-    @Transactional
-    public void reportComment(Long commentId, Long userId, String reason) {
-        // 댓글 신고 처리 로직
-    }
-
-    // 3. 댓글 수정 기록 기능
-    @Transactional
-    public CommentDTO updateCommentWithHistory(Long commentId, CommentDTO commentDTO) {
-        // 댓글 수정 기록 추가 로직
-        return null; // 실제 구현 필요
-    }
-
-    // 4. 댓글 좋아요 통계 기능
-    public int getCommentLikesCount(Long commentId) {
-        // 댓글 좋아요 수 조회 로직
-        return 0; // 실제 구현 필요
-    }
-
-    // 5. 댓글 알림 설정 기능
-    public void toggleCommentNotification(Long commentId, Long userId) {
-        // 댓글 알림 설정/해제 로직
-    }
-
-    // 6. 댓글에 대한 접근 제어 기능
-    public void setCommentAccessControl(Long commentId, List<Long> allowedUserIds) {
-        // 댓글 접근 제어 설정 로직
-    }
-
-    // 7. 댓글 스팸 필터링 기능
-    public void filterSpamComments(Long postId) {
-        // 스팸 댓글 필터링 로직
-    }
-
-    // 8. 댓글 정렬 기능
-    public List<CommentDTO> getSortedComments(Long postId, String sortOrder) {
-        // 댓글 정렬 로직
-        return null; // 실제 구현 필요
+    // 댓글 작성자 검증
+    private void validateCommentOwner(Comment comment) {
+        // TODO: 스프링 시큐리티를 통해 현재 사용자 정보 가져오기
+        // 현재 사용자가 댓글 작성자인지 확인하는 로직을 구현해야 합니다.
+        // 예시:
+        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Long currentUserId = ((UserDetailsImpl) authentication.getPrincipal()).getId();
+        // if (!comment.getUser().getId().equals(currentUserId)) {
+        //     throw new IllegalArgumentException("User is not authorized to access this comment");
+        // }
     }
 }
-
-

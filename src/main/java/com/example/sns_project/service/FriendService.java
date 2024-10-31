@@ -1,6 +1,7 @@
 package com.example.sns_project.service;
 
 import com.example.sns_project.enums.RequestStatus;
+import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.FriendRequest;
 import com.example.sns_project.model.Friendship;
 import com.example.sns_project.model.User;
@@ -26,14 +27,13 @@ public class FriendService {
     @Transactional
     public void sendFriendRequest(Long senderId, Long receiverId) {
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
         User receiver = userRepository.findById(receiverId)
-                .orElseThrow(() -> new RuntimeException("Receiver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
 
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
-        friendRequest.setTimestamp(LocalDateTime.now());
         friendRequest.setStatus(RequestStatus.PENDING);
 
         friendRequestRepository.save(friendRequest);
@@ -44,7 +44,7 @@ public class FriendService {
     @Transactional
     public void acceptFriendRequest(Long requestId) {
         FriendRequest friendRequest = friendRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Friend request not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Friend request not found"));
 
         Friendship friendship = new Friendship();
         friendship.setUser1(friendRequest.getSender());

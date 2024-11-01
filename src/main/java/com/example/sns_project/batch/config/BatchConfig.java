@@ -15,7 +15,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
-import org.springframework.batch.test.JobLauncherTestUtils;
+//import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,9 +49,9 @@ public class BatchConfig {
     public Step step() {
         return new StepBuilder("step", jobRepository)
                 .<InputType, OutputType>chunk(100, transactionManager) // Chunk 단위로 처리 (100개씩)
-                .reader(itemReader()) // ItemReader를 설정
-                .processor(itemProcessor()) // ItemProcessor를 설정
-                .writer(itemWriter()) // ItemWriter를 설정
+                .reader(itemReader()) // ItemReader를 설정 가공할 데이터를 읽어옴
+                .processor(itemProcessor()) // ItemProcessor를 설정, 읽어온 데이터를 가공함
+                .writer(itemWriter()) // ItemWriter를 설정, 가공한 데이터를 어찌할지
                 .build(); // Step을 빌드하여 반환
     }
 

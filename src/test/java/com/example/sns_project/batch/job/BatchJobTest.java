@@ -6,6 +6,7 @@ import com.example.sns_project.batch.dto.OutputType; // OutputType DTO 임포트
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach; // JUnit 5의 테스트 준비 어노테이션
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test; // JUnit 5의 테스트 어노테이션
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.support.RunIdIncrementer; // Job ID 증가기
@@ -39,6 +40,7 @@ public class BatchJobTest {
 
 
     List<InputType> inputTypeList = new ArrayList<>();
+
     @BeforeEach
     public void setUp() {
 
@@ -61,6 +63,7 @@ public class BatchJobTest {
 
 
     @Test
+    @DisplayName("배치 잡 테스트 Processor 직접 작성")
     public void testBatchJob() throws Exception {
         // JobParameters : Job 실행 시 다양한 설정을 위해 사용
         // 구분하기 쉽게 하기 위해서 현재 시간을 잡파라미터로 설정
@@ -87,11 +90,14 @@ public class BatchJobTest {
         // ExecutionContext에 임시 데이터 설정
         List<OutputType> outputList = new ArrayList<>();
 
-        // itemProcessor를 사용하여 InputType을 OutputType으로 변환
+//         itemProcessor를 사용하여 InputType을 OutputType으로 변환
         for (InputType inputType : inputTypeList) {
             OutputType outputType = itemProcessor.process(inputType);
             outputList.add(outputType);
         }
+
+
+
 
         /*
         변환된 outputList를 stepExecution의 ExecutionContext에 "outputList"라는 키로 저장.
@@ -107,5 +113,36 @@ public class BatchJobTest {
             assertThat(output.getProcessedData()).startsWith("Processed: ");
         }
     }
+
+
+    @Test
+    @DisplayName("배치 잡 테스트 Processor 직접 작성 안함")
+    public void testBatchJobWithNoProcessor() throws Exception {
+        // JobParameters : Job 실행 시 다양한 설정을 위해 사용
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+
+        // Job 실행 및 결과 가져오기
+        JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
+
+        // Job 실행 상태 검증
+        assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
+
+        // JobExecution에서 실행된 Step의 정보를 가져오기
+        StepExecution stepExecution = jobExecution.getStepExecutions().iterator().next();
+
+        // ExecutionContext에서 변환된 OutputType 리스트 가져오기
+        List<OutputType> outputList = (List<OutputType>) stepExecution.getExecutionContext().get("outputList");
+
+        // OutputType 데이터 검증
+        assertThat(outputList).isNotNull();
+        assertThat(outputList.size()).isEqualTo(10); // 10개가 처리되어야 함
+
+        for (OutputType output : outputList) {
+            assertThat(output.getProcessedData()).startsWith("Processed: ");
+        }
+    }
+
 }
 

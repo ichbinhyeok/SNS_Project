@@ -45,6 +45,7 @@ public class PostServiceTest {
     private NotificationService notificationService;
     @InjectMocks
     private PostService postService;
+
     private User user;
     private Post post;
     private Comment comment;

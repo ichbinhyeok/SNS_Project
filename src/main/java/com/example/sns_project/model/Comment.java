@@ -28,7 +28,8 @@ public class Comment extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false) // 작성자 ID를 참조
-    private User user;            // 작성자
+    private User user;// 작성자
+
 
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> childrenComments = new HashSet<>(); // 대댓글 목록

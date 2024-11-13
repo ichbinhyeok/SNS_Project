@@ -32,7 +32,7 @@ public class Post extends BaseEntity{
     private User user;            // 게시글 작성자
 
     //게시글에 대한 좋아요 리스트
-    @OneToMany(mappedBy = "post",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "post",cascade = CascadeType.ALL,orphanRemoval = true)//TODO mappedBy 공부하기
     private Set<PostLike> likes = new HashSet<>();
 
     //게시글에 대한 댓글 리스트

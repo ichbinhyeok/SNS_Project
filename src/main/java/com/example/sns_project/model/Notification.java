@@ -17,7 +17,7 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private String message;       // 알림 내용
 
-    @ManyToOne(fetch = FetchType.LAZY) // User와의 연관관계 설정
+    @ManyToOne(fetch = FetchType.LAZY) // User와의 연관관계 설정 //TODO 공부하세요!! 저도 잘 몰라요!
     @JoinColumn(name = "user_id", nullable = false) // 외래 키 설정
     private User user;            // 수신자 객체
 

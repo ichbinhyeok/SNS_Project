@@ -1,5 +1,6 @@
-package com.example.sns_project.batch.config;
+package com.example.sns_project.batch.job;
 
+import com.example.sns_project.batch.config.WeeklyReportBatchConfig;
 import com.example.sns_project.batch.entity.Customer;
 import com.example.sns_project.batch.entity.Sales;
 import com.example.sns_project.batch.repository.CustomerRepository;
@@ -29,6 +30,7 @@ public class WeeklyReportBatchConfigTest {
 
     @Autowired
     private JobLauncher jobLauncher;
+
 
     @Autowired
     private JobRepository jobRepository;

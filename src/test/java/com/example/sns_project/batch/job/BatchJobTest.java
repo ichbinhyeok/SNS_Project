@@ -3,11 +3,14 @@ package com.example.sns_project.batch.job;
 import com.example.sns_project.batch.config.BatchConfig; // 배치 설정 클래스 임포트
 import com.example.sns_project.batch.entity.InputType; // InputType 엔티티 임포트
 import com.example.sns_project.batch.dto.OutputType; // OutputType DTO 임포트
+import com.example.sns_project.init.DatabaseInitializer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach; // JUnit 5의 테스트 준비 어노테이션
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test; // JUnit 5의 테스트 어노테이션
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.runner.RunWith;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.support.RunIdIncrementer; // Job ID 증가기
 import org.springframework.batch.item.ItemProcessor;
@@ -17,14 +20,17 @@ import org.springframework.beans.factory.annotation.Autowired; // Spring의 의�
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc; // MockMvc 설정
 import org.springframework.boot.test.context.SpringBootTest; // Spring Boot 테스트 어노테이션
 import org.springframework.context.annotation.Import; // 설정 클래스 임포트
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional; // 트랜잭션 어노테이션
 
 import java.util.ArrayList;
 import java.util.List; // List 임포트
 import static org.assertj.core.api.Assertions.assertThat; // AssertJ Assertions 임포트
 
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
 @SpringBatchTest
-@SpringBootTest // Spring Boot 테스트 설정
 @Import(BatchConfig.class) // BatchConfig 클래스 임포트
 @AutoConfigureMockMvc // MockMvc 자동 구성
 public class BatchJobTest {
@@ -50,7 +56,7 @@ public class BatchJobTest {
 
 
         // 테스트 데이터 생성
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 100; i++) {
             InputType input = new InputType();
             input.setData("Test Data " + i); // ID 설정 없이 데이터만 설정
             inputTypeList.add(input);
@@ -65,6 +71,8 @@ public class BatchJobTest {
     @Test
     @DisplayName("배치 잡 테스트 Processor 직접 작성")
     public void testBatchJob() throws Exception {
+
+
         // JobParameters : Job 실행 시 다양한 설정을 위해 사용
         // 구분하기 쉽게 하기 위해서 현재 시간을 잡파라미터로 설정
         JobParameters jobParameters = new JobParametersBuilder()
@@ -76,6 +84,8 @@ public class BatchJobTest {
         jobLauncherTestUtils를 사용하여 생성한 jobParameters로 배치 작업을 실행합니다.
         launchJob() 메서드는 배치 작업을 시작하고 JobExecution 객체를 반환하여 실행 결과를 확인할 수 있게 합니다.
         */
+
+
         JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
 
         // Job 실행 상태 검증, 배치 작업이 성공적으로 완료되었음을 나타냄

@@ -60,7 +60,7 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // Spring Security 테스트 지원
     testImplementation 'org.junit.jupiter:junit-jupiter-api' // JUnit 5 API
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine' // JUnit 5 Engine
-    testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation 'org.springframework.batch:spring-batch-test:5.1.2'
 
 
 

@@ -25,6 +25,7 @@ public class Post extends BaseEntity{
     private String title;         // 게시글 제목
 
     @Column(nullable = false)
+    @Lob
     private String content;       // 게시글 내용
 
     @ManyToOne // 여러 개의 게시글이 하나의 사용자에 속함

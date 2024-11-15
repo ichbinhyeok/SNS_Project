@@ -9,11 +9,16 @@ import com.example.sns_project.model.*;
 import com.example.sns_project.repository.CommentRepository;
 import com.example.sns_project.repository.PostRepository;
 import com.example.sns_project.repository.UserRepository;
+import com.github.javafaker.Faker;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -26,6 +31,10 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final CommentService commentService;
     private final NotificationService notificationService;
+
+    @Autowired
+    private EntityManager entityManager;
+
 
     // 현재 구현된 기능: 게시물 생성
     @Transactional
@@ -151,6 +160,7 @@ public class PostService {
         );
     }
 
+
     // 현재 구현된 기능: 모든 게시물 조회
     public List<PostDTO> getAllPosts() {
         List<Post> posts = postRepository.findAll();
@@ -158,6 +168,71 @@ public class PostService {
                 .map(post -> convertToDTO(post, post.getUser()))
                 .toList();
     }
+
+
+    // 더미 포스트 값 넣기
+    @Transactional
+    public void createDummyPost(int count) {
+
+        for (int i = 0; i < count; i++) {
+            // 랜덤 사용자 선택
+            Faker faker = new Faker();
+            User user = userService.randomSelectUser();
+            UserDTO userDTO = new UserDTO(user.getId(), user.getUsername(), user.getEmail());
+
+            // PostDTO 생성
+            PostDTO postDTO = new PostDTO();
+            postDTO.setTitle(faker.lorem().sentence());
+            postDTO.setContent(faker.lorem().sentence(10)); // 10개의 단어로 구성된 문장 생성
+//            postDTO.setContent(faker.lorem().paragraph());
+            postDTO.setAuthor(userDTO); // 게시글 작성자 설정
+
+
+            // createPost 메서드 호출
+            createPost(postDTO);
+
+        }
+    }
+
+    @Transactional
+    public void createDummyPostByEM(int count) {
+        Faker faker = new Faker(); // Faker 인스턴스는 루프 밖에서 생성
+        int batchSize = 0000000; // 배치 크기 설정
+        List<User> cachedUsers = userRepository.findAll(); // 모든 사용자 리스트를 한 번에 가져오기
+        Random random = new Random(); // 랜덤 객체 생성
+
+        for (int i = 0; i < count; i++) {
+//            // 랜덤 사용자 선택
+//            User user = userService.randomSelectUser();
+            // 캐싱된 유저 리스트에서 랜덤으로 사용자 선택
+            User user = cachedUsers.get(random.nextInt(cachedUsers.size()));
+            UserDTO userDTO = new UserDTO(user.getId(), user.getUsername(), user.getEmail());
+
+            // PostDTO 생성
+            PostDTO postDTO = new PostDTO();
+            postDTO.setTitle(faker.lorem().sentence());
+            postDTO.setContent(faker.lorem().sentence(10)); // 10개의 단어로 구성된 문장 생성
+            postDTO.setAuthor(userDTO); // 게시글 작성자 설정
+
+            // createPost 메서드 호출 (Post 엔티티로 변환 후 persist)
+            Post post = new Post();
+            post.setTitle(postDTO.getTitle());
+            post.setContent(postDTO.getContent());
+            post.setUser(user); // User 엔티티를 직접 설정
+
+            entityManager.persist(post); // 엔티티 매니저에 게시글 추가
+
+            // 일정 수마다 flush 및 clear
+            if (i % batchSize == 0 && i > 0) {
+                entityManager.flush(); // 데이터베이스에 반영
+                entityManager.clear(); // 영속성 컨텍스트 비우기
+            }
+        }
+        entityManager.flush(); // 남은 데이터 flush
+        entityManager.clear(); // 마지막으로 영속성 컨텍스트 비우기
+    }
+
+
 
     // 앞으로 구현될 기능: 게시물 검색 기능
     public List<PostDTO> searchPosts(String keyword) {

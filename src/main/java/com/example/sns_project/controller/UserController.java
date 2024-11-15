@@ -34,5 +34,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, userDTO, passwordDTO));
     }
 
+
+
     // 앞으로: 유효성 검사 및 예외 처리 추가 필요
 }

@@ -18,7 +18,7 @@ public class Customer {
     private String name; // 고객 이름
     private String email; // 고객 이메일
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, ) // Sales와의 관계 설정
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true) // Sales와의 관계 설정
     private List<Sales> sales; // 고객의 구매 내역 초기화
 
     // 총 구매 금액을 계산하는 메소드

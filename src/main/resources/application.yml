@@ -6,11 +6,7 @@ spring:
       driver-class-name: org.mariadb.jdbc.Driver
 
 
-  redis:
-    port: 6379
-
-
-#springdoc:
+  #springdoc:
 #  api-docs:
 #    path: /v3/api-docs
 #  swagger-ui:
@@ -44,6 +40,7 @@ spring:
   data:
     redis:
       host: localhost
+      port: 6379
 
 server:
   port: 8080

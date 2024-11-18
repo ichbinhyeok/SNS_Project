@@ -1,0 +1,39 @@
+[33m2ea3815[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge remote-tracking branch 'origin/master'
+[33m16a885b[m feat : 다중DB+ springBatchConfig
+[33m7ca5be1[m chore : 스프링배치 테스트 오류 잡는중..
+[33mc30f910[m feat : faker라이브러리 + JPA 배치
+[33m9cb3f11[m Merge remote-tracking branch 'origin/master'
+[33m5902a02[m feat : PostServiceTest 작성 (addComment 미작성)
+[33ma69e018[m test : WeeklyReportBatchConfigTest
+[33mac50d4c[m test: testBatchJobWithNoProcessor 추가
+[33m3456504[m Merge remote-tracking branch 'origin/master'
+[33mbe6b435[m feat : PostServiceTest 작성 (addComment 미작성)
+[33mcf7ad26[m feat : FriendServiceTest 작성
+[33mc94a79d[m Feat: 배치 테스트(itemProcessor를 통해 InputType > OutputType 변환)
+[33m248b2e4[m Feat: 배치 테스트(itemProcessor를 통해 InputType > OutputType 변환)
+[33mbedcc29[m Refactor : 엔티티 ID 상속 받게끔 수정
+[33mc984fa8[m feat: 테스트코드 작성 AuthServiceTest,CommentServiceTest
+[33mc218674[m Feat: 부모 자식 관계 설정
+[33m38fcb39[m Feat: 커밋 계정 변경 테스트
+[33m07232a7[m Feat: yml 파일 수정
+[33mf9a7652[m Merge branch 'master' of https://github.com/ichbinhyeok/SNS_Project
+[33m88dea5c[m Feat: 배치 테스트 데이터 추가
+[33m749c12f[m feat: Add friend management features
+[33m9a772a6[m docs : 앞으로 필요할 수도 있는 기능들 표시
+[33m027aeb8[m feat : 친구추가기능 추가
+[33m44a696a[m Refactor : comment,Post에 있는 알림기능을 NotificationService에 옮김
+[33m6ab4b50[m Feat : API 문서화를 위한 어노테이션 및 의존성
+[33mfbcee12[m Feat : 알림 기능 기본 기능 구현
+[33m8f437ef[m Fix: Comment와 User, Post와 User 맵핑이 잘못되어서 새롭게 맵핑
+[33m334d915[m "Refactor: UserDTO에서 비밀번호 필드를 제거하고, UserPasswordUpdateDTO,UserRegistrationDTO로 분할함
+[33m682d05d[m feat : 댓글,포스트 좋아요 기능, 대댓글 기능 추가
+[33m5f6f7b0[m Merge branch 'master' of https://github.com/ichbinhyeok/SNS_Project
+[33mdf5fd08[m Feat: 배치 테스트 구조화
+[33mc5e656b[m Feat: 배치, 다중데이터베이스 연결
+[33mce2cdba[m feat : 테스트코드 CommentControllerTest 작성
+[33m8f40de9[m Refactor : testCode Post,User,Auth Controller
+[33meabe76c[m feat : testCode Post,User,Auth Controller
+[33m33a5dc5[m chore: update dependencies and add configuration YAML file
+[33m84c2d96[m feat : BaseEntity 추가
+[33mabe4462[m feat : java라이브러리 추가 및, 더미데이터 예시 추가
+[33ma1c543f[m init

@@ -22,7 +22,7 @@ public class RedisTestRepositoryTest {
         for (int i = 1 ; i <= numberOfEntries; i++) {
             RedisTest redisTest = new RedisTest();
             redisTest.setId(String.valueOf(i)); // 자동 증가 ID 설정
-            redisTest.setName("Test User " + (i + 1));
+            redisTest.setName("Test User " + i);
             redisTest.setAge(20 + (i % 10)); // 나이를 20~29로 설정
 
             // Save each entry
@@ -35,6 +35,6 @@ public class RedisTestRepositoryTest {
         // Then: Verifying data is present
         assertThat(retrievedData).isNotNull();
         assertThat(retrievedData.getName()).isEqualTo("Test User 50");
-        assertThat(retrievedData.getAge()).isEqualTo(20 + (49 % 10)); // 인덱스 49 (0-based)
+        assertThat(retrievedData.getAge()).isEqualTo(20); // 인덱스 49 (0-based)
     }
 }

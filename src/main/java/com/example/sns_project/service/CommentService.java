@@ -31,6 +31,8 @@ public class CommentService {
     // 댓글 작성
     @Transactional
     public CommentDTO createComment(CommentDTO commentDTO) {
+
+
         Post post = postRepository.findById(commentDTO.getPostId())
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 

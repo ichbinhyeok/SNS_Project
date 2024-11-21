@@ -8,10 +8,13 @@ import com.example.sns_project.model.Role; // Role 임포트
 import com.example.sns_project.model.User;
 import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
 import com.example.sns_project.repository.UserRepository;
+import com.github.javafaker.Faker;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -64,6 +67,35 @@ public class AuthService {
         // UserDTO에 ID 추가하여 반환
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail()); // 등록된 사용자 DTO 반환
     }
+
+
+
+
+    public List<String> generateAndRegisterUsers(int count) {
+        Faker faker = new Faker();
+        List<UserRegistrationDTO> userRegistrationDTOs = new ArrayList<>();
+        List<String> registeredUsernames = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            UserRegistrationDTO userRegistrationDTO = new UserRegistrationDTO();
+            userRegistrationDTO.setUsername(faker.name().username());
+            userRegistrationDTO.setEmail(faker.internet().emailAddress());
+            String password = "123";
+            userRegistrationDTO.setPassword(password);
+
+//            userRegistrationDTO.setPassword(faker.internet().password());
+
+            userRegistrationDTOs.add(userRegistrationDTO);
+        }
+
+        for (UserRegistrationDTO userRegistrationDTO : userRegistrationDTOs) {
+            UserDTO registeredUser = register(userRegistrationDTO); // register 메서드는 사용자 등록 로직을 처리합니다.
+            registeredUsernames.add(registeredUser.getUsername());
+        }
+
+        return registeredUsernames;
+    }
+
 
     // 앞으로: 비밀번호 검증 로직 및 예외 처리 추가
 }

@@ -1,5 +1,6 @@
 package com.example.sns_project.dto;
 
+import com.example.sns_project.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class PostDTO {
     private String title;         // 게시글 제목
     private String content;       // 게시글 내용
     private UserDTO author;       // 작성자 정보 (UserDTO로 변경)
+//    private User author;
     private Set<Long> likedBy;    // 좋아요 누른 사람 ID 목록
 
     // Getter 및 Setter 메서드

@@ -96,4 +96,17 @@ public class PostController {
         List<CommentDTO> comments = postService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
+
+    @PostMapping("/generate-DummyPosts")
+    public ResponseEntity<String> createDummyPosts(@RequestParam int count) {
+        postService.createDummyPost(count);
+        return ResponseEntity.ok("Dummy posts created: " + count);
+    }
+
+    @PostMapping("/generate-DummyPostsByEM")
+    public ResponseEntity<String> createDummyPostByEM(@RequestParam int count) {
+        postService.createDummyPostByEM(count);
+        return ResponseEntity.ok("Dummy posts created: " + count);
+    }
+
 }

@@ -25,6 +25,7 @@ public class Post extends BaseEntity{
     private String title;         // 게시글 제목
 
     @Column(nullable = false)
+    @Lob
     private String content;       // 게시글 내용
 
     @ManyToOne // 여러 개의 게시글이 하나의 사용자에 속함
@@ -32,7 +33,7 @@ public class Post extends BaseEntity{
     private User user;            // 게시글 작성자
 
     //게시글에 대한 좋아요 리스트
-    @OneToMany(mappedBy = "post",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "post",cascade = CascadeType.ALL,orphanRemoval = true)//TODO mappedBy 공부하기
     private Set<PostLike> likes = new HashSet<>();
 
     //게시글에 대한 댓글 리스트

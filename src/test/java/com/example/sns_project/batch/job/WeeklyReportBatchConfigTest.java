@@ -31,6 +31,7 @@ public class WeeklyReportBatchConfigTest {
     @Autowired
     private JobLauncher jobLauncher;
 
+
     @Autowired
     private JobRepository jobRepository;
 

@@ -10,19 +10,24 @@ import org.junit.jupiter.api.BeforeEach; // JUnit 5의 테스트 준비 어노�
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test; // JUnit 5의 테스트 어노테이션
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer; // Job ID 증가기
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.test.JobLauncherTestUtils; // Job 테스트 유틸리티
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired; // Spring의 의존성 주입 어노테이션
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc; // MockMvc 설정
 import org.springframework.boot.test.context.SpringBootTest; // Spring Boot 테스트 어노테이션
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import; // 설정 클래스 임포트
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional; // 트랜잭션 어노테이션
+import org.springframework.batch.test.JobLauncherTestUtils;
+
+
 
 import java.util.ArrayList;
 import java.util.List; // List 임포트
@@ -152,6 +157,14 @@ public class BatchJobTest {
         for (OutputType output : outputList) {
             assertThat(output.getProcessedData()).startsWith("Processed: ");
         }
+    }
+
+    @Bean
+    public JobLauncherTestUtils jobLauncherTestUtils(JobLauncher jobLauncher, JobRepository jobRepository) {
+        JobLauncherTestUtils jobLauncherTestUtils = new JobLauncherTestUtils();
+        jobLauncherTestUtils.setJobLauncher(jobLauncher);
+        jobLauncherTestUtils.setJobRepository(jobRepository);
+        return jobLauncherTestUtils;
     }
 
 }

@@ -197,7 +197,7 @@ public class PostService {
     @Transactional
     public void createDummyPostByEM(int count) {
         Faker faker = new Faker(); // Faker 인스턴스는 루프 밖에서 생성
-        int batchSize = 0000000; // 배치 크기 설정
+        int batchSize = 1000; // 배치 크기 설정
         List<User> cachedUsers = userRepository.findAll(); // 모든 사용자 리스트를 한 번에 가져오기
         Random random = new Random(); // 랜덤 객체 생성
 

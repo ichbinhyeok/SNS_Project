@@ -3,6 +3,8 @@ package com.example.sns_project.batch.config;
 import com.example.sns_project.batch.dto.OutputType;
 import com.example.sns_project.batch.entity.InputType;
 import jakarta.persistence.EntityManagerFactory;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -16,12 +18,14 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 //import org.springframework.batch.test.JobLauncherTestUtils;
-import org.springframework.batch.test.JobLauncherTestUtils;
+//import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+@Getter
+@Setter
 @Slf4j
 @Configuration // 이 클래스가 Spring Configuration임을 나타냄
 public class BatchConfig {
@@ -81,12 +85,12 @@ public class BatchConfig {
         };
     }
 
-    @Bean
-    public JobLauncherTestUtils jobLauncherTestUtils(JobLauncher jobLauncher, JobRepository jobRepository) {
-        JobLauncherTestUtils jobLauncherTestUtils = new JobLauncherTestUtils();
-        jobLauncherTestUtils.setJobLauncher(jobLauncher);
-        jobLauncherTestUtils.setJobRepository(jobRepository);
-        return jobLauncherTestUtils;
-    }
+//    @Bean
+//    public JobLauncherTestUtils jobLauncherTestUtils(JobLauncher jobLauncher, JobRepository jobRepository) {
+//        JobLauncherTestUtils jobLauncherTestUtils = new JobLauncherTestUtils();
+//        jobLauncherTestUtils.setJobLauncher(jobLauncher);
+//        jobLauncherTestUtils.setJobRepository(jobRepository);
+//        return jobLauncherTestUtils;
+//    }
 
 }

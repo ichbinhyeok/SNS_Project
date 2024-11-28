@@ -24,7 +24,7 @@ public class Post extends BaseEntity{
     @Column(nullable = false)
     private String title;         // 게시글 제목
 
-    @Column(nullable = false)
+    @Column(nullable = false,columnDefinition = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     @Lob
     private String content;       // 게시글 내용
 
@@ -37,7 +37,7 @@ public class Post extends BaseEntity{
     private Set<PostLike> likes = new HashSet<>();
 
     //게시글에 대한 댓글 리스트
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
 
     // Getter 및 Setter 메서드

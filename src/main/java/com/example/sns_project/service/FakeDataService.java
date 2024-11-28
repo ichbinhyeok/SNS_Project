@@ -219,8 +219,8 @@ public class FakeDataService {
      * @param likeRatio 전체 사용자 중 좋아요를 누를 비율 (0.0 ~ 1.0)
      */
     @Transactional
-    public void generateLikes(double likeRatio) {
-        int pageSize = 500;
+    public void generatePostLikes(double likeRatio) {
+        int pageSize = 10000;
         int pageNumber = 0;
         int processedCount = 0;
 
@@ -272,6 +272,66 @@ public class FakeDataService {
         log.info("좋아요 생성 완료. 총 생성 수: {}", processedCount);
     }
 
+    //천오백만건 약 35분
+    @Transactional
+    public void generateCommentLikes(double likeRatio) {
+        int pageSize = 10000;
+        int pageNumber = 0;
+        int processedCount = 0;
+
+        // 전체 사용자 목록 조회
+        List<User> allUsers = userRepository.findAll();
+
+        while (true) {
+            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+            // 1단계: Comment ID 페이징
+            List<Long> commentIds = commentRepository.findCommentIdsByPage(pageable);
+            if (commentIds.isEmpty()) break;
+
+            // 2단계: 페치 조인으로 Comment와 likes 로드
+            List<Comment> allComments = commentRepository.findAllWithLikesByIds(commentIds);
+
+            for (Comment comment : allComments) {
+                // 이미 좋아요한 사용자 ID 수집
+                Set<Long> existingLikes = comment.getLikes().stream()
+                        .map(like -> like.getUser().getId())
+                        .collect(Collectors.toSet());
+
+                // 생성할 좋아요 수 계산
+                int numberOfLikes = (int) (allUsers.size() * likeRatio);
+                List<User> shuffledUsers = new ArrayList<>(allUsers);
+                Collections.shuffle(shuffledUsers);
+
+                // 좋아요 생성
+                for (int i = 0; i < numberOfLikes && i < shuffledUsers.size(); i++) {
+                    User user = shuffledUsers.get(i);
+                    if (!existingLikes.contains(user.getId())) {
+                        CommentLike commentLike = new CommentLike();
+                        commentLike.setComment(comment);
+                        commentLike.setUser(user);
+
+                        entityManager.persist(commentLike);
+                        processedCount++;
+
+                        // 메모리 관리를 위한 주기적인 플러시
+                        if (processedCount % pageSize == 0) {
+                            entityManager.flush();
+                            entityManager.clear();
+                            log.info("댓글 좋아요 생성 중... {}", processedCount);
+                        }
+                    }
+                }
+            }
+
+            pageNumber++;
+        }
+
+        // 마지막 플러시
+        entityManager.flush();
+        entityManager.clear();
+        log.info("댓글 좋아요 생성 완료. 총 생성 수: {}", processedCount);
+    }
 
 
 }

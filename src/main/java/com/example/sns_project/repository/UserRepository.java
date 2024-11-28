@@ -18,3 +18,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findNonFriendsByUserId(@Param("userId") Long userId);
     // 앞으로: 추가적인 쿼리 메서드 정의 (예: 사용자 삭제 등)
 }
+

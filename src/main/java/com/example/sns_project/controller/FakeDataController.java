@@ -24,10 +24,19 @@ public class FakeDataController {
     private final FakeDataService fakeDataService;
 
     @PostMapping("/generate/all")
-    @Operation(summary = "전체 더미 데이터 생성", description = "게시글, 댓글, 좋아요 더미 데이터를 한번에 생성합니다.")
-    public ResponseEntity<Map<String, Object>> generateAllData(
-            @RequestParam(name = "postCount", defaultValue = "100")
-            @Parameter(description = "생성할 게시글 수") int postCount,
+    @Operation(summary = "전체 더미 데이터 생성", description = "사용자, 친구 관계, 게시글, 댓글, 좋아요 등 모든 더미 데이터를 순차적으로 생성합니다.")
+    public ResponseEntity<Map<String, Object>> generateCompleteData(
+            @RequestParam(name = "userCount", defaultValue = "100")
+            @Parameter(description = "생성할 사용자 수") int userCount,
+
+            @RequestParam(name = "friendshipRatio", defaultValue = "0.2")
+            @Parameter(description = "사용자당 친구 관계 비율 (0.0 ~ 1.0)") double friendshipRatio,
+
+            @RequestParam(name = "friendRequestsPerUser", defaultValue = "5")
+            @Parameter(description = "사용자당 친구 요청 수") int friendRequestsPerUser,
+
+            @RequestParam(name = "postsPerUser", defaultValue = "5")
+            @Parameter(description = "사용자당 게시글 수") int postsPerUser,
 
             @RequestParam(name = "commentsPerPost", defaultValue = "10")
             @Parameter(description = "게시글당 평균 댓글 수") int commentsPerPost,
@@ -38,47 +47,125 @@ public class FakeDataController {
             @RequestParam(name = "likeRatio", defaultValue = "0.4")
             @Parameter(description = "좋아요 비율 (0.0 ~ 1.0)") double likeRatio
     ) {
+        // 결과를 저장할 Map을 try 블록 외부에서 선언
+        Map<String, Object> statistics = new HashMap<>();
+        long totalStartTime = System.currentTimeMillis();
+
         try {
-            log.info("더미 데이터 생성 시작: posts={}, commentsPerPost={}, maxDepth={}, likeRatio={}",
-                    postCount, commentsPerPost, maxDepth, likeRatio);
+            log.info("전체 더미 데이터 생성 시작 ===========================================");
+            log.info("설정된 파라미터:");
+            log.info("- 사용자 수: {}", userCount);
+            log.info("- 친구 관계 비율: {}", friendshipRatio);
+            log.info("- 사용자당 친구 요청 수: {}", friendRequestsPerUser);
+            log.info("- 사용자당 게시글 수: {}", postsPerUser);
+            log.info("- 게시글당 댓글 수: {}", commentsPerPost);
+            log.info("- 댓글 최대 깊이: {}", maxDepth);
+            log.info("- 좋아요 비율: {}", likeRatio);
 
-            // 게시글 생성
-            log.info("게시글 생성 시작");
-            fakeDataService.generatePosts(postCount);
-            log.info("게시글 {} 개 생성 완료", postCount);
+            // 1. 사용자 생성
+            log.info("[1/7] 사용자 생성 시작 - 목표: {} 명", userCount);
+            long userStartTime = System.currentTimeMillis();
+            Map<String, Object> userResult = fakeDataService.generateAndRegisterUsers(userCount);
+            statistics.put("userGeneration", userResult);
+            statistics.put("userGenerationTime", System.currentTimeMillis() - userStartTime);
+            log.info("사용자 생성 완료");
 
-            // 댓글 생성
-            int totalComments = postCount * commentsPerPost;
-            log.info("댓글 생성 시작");
+            // 2. 친구 관계 생성
+            log.info("[2/7] 친구 관계 생성 시작 - 비율: {}", friendshipRatio);
+            long friendshipStartTime = System.currentTimeMillis();
+            fakeDataService.generateFriendships(friendshipRatio);
+            statistics.put("friendshipGenerationTime", System.currentTimeMillis() - friendshipStartTime);
+            statistics.put("friendshipRatio", friendshipRatio);
+            log.info("친구 관계 생성 완료");
+
+            // 3. 친구 요청 생성
+            log.info("[3/7] 친구 요청 생성 시작 - 사용자당 요청 수: {}", friendRequestsPerUser);
+            long requestStartTime = System.currentTimeMillis();
+            fakeDataService.generateFriendRequests(friendRequestsPerUser);
+            statistics.put("friendRequestGenerationTime", System.currentTimeMillis() - requestStartTime);
+            statistics.put("friendRequestsPerUser", friendRequestsPerUser);
+            log.info("친구 요청 생성 완료");
+
+            // 4. 게시글 생성
+            int totalPosts = userCount * postsPerUser;
+            log.info("[4/7] 게시글 생성 시작 - 총 게시글 수: {}", totalPosts);
+            long postStartTime = System.currentTimeMillis();
+            fakeDataService.generatePosts(totalPosts);
+            statistics.put("postGenerationTime", System.currentTimeMillis() - postStartTime);
+            statistics.put("totalPosts", totalPosts);
+            log.info("게시글 생성 완료");
+
+            // 5. 댓글 생성
+            int totalComments = totalPosts * commentsPerPost;
+            log.info("[5/7] 댓글 생성 시작 - 총 댓글 수: {}", totalComments);
+            long commentStartTime = System.currentTimeMillis();
             fakeDataService.generateComments(totalComments, maxDepth);
-            log.info("댓글 {} 개 생성 완료", totalComments);
+            statistics.put("commentGenerationTime", System.currentTimeMillis() - commentStartTime);
+            statistics.put("totalComments", totalComments);
+            log.info("댓글 생성 완료");
 
-            // 좋아요 생성
-            log.info("게시글 좋아요 생성 시작");
+            // 6. 게시글 좋아요 생성
+            log.info("[6/7] 게시글 좋아요 생성 시작 - 비율: {}", likeRatio);
+            long postLikeStartTime = System.currentTimeMillis();
             fakeDataService.generatePostLikes(likeRatio);
+            statistics.put("postLikeGenerationTime", System.currentTimeMillis() - postLikeStartTime);
+            statistics.put("expectedPostLikes", (int)(totalPosts * likeRatio));
             log.info("게시글 좋아요 생성 완료");
 
-            // 댓글 좋아요 생성
-            log.info("댓글 좋아요 생성 시작");
+            // 7. 댓글 좋아요 생성
+            log.info("[7/7] 댓글 좋아요 생성 시작 - 비율: {}", likeRatio);
+            long commentLikeStartTime = System.currentTimeMillis();
             fakeDataService.generateCommentLikes(likeRatio);
+            statistics.put("commentLikeGenerationTime", System.currentTimeMillis() - commentLikeStartTime);
+            statistics.put("expectedCommentLikes", (int)(totalComments * likeRatio));
             log.info("댓글 좋아요 생성 완료");
 
-            // 결과 반환
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("generatedPosts", postCount);
-            statistics.put("generatedComments", totalComments);
-            statistics.put("generatedPostLikes", (int) (likeRatio * postCount));
-            statistics.put("generatedCommentLikes", (int) (likeRatio * totalComments));
+            // 최종 통계
+            long totalTime = System.currentTimeMillis() - totalStartTime;
+            statistics.put("totalExecutionTimeMs", totalTime);
 
-            log.info("더미 데이터 생성 완료: {}", statistics);
+            log.info("전체 더미 데이터 생성 완료 =========================================");
+            log.info("총 소요 시간: {}ms", totalTime);
+
             return ResponseEntity.ok(statistics);
+
         } catch (Exception e) {
-            log.error("더미 데이터 생성 실패: {}", e.getMessage(), e);
+            long failureTime = System.currentTimeMillis() - totalStartTime;
+            log.error("전체 더미 데이터 생성 중 오류 발생 - 진행 시간: {}ms", failureTime);
+            log.error("오류 내용: {}", e.getMessage());
+
+            // 오류 정보 추가
+            statistics.put("status", "error");
+            statistics.put("error", e.getMessage());
+            statistics.put("timeUntilError", failureTime);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(statistics);
+        }
+    }
+
+    @PostMapping("/generate/users")
+    @Operation(summary = "사용자 더미 데이터 생성")
+    public ResponseEntity<Map<String, Object>> generateUsers(
+            @RequestParam(name = "count", defaultValue = "100")
+            @Parameter(description = "생성할 사용자 수") int count
+    ) {
+        try {
+            log.info("사용자 생성 시작. 생성할 사용자 수: {}", count);
+            long startTime = System.currentTimeMillis();
+
+            Map<String, Object> result = fakeDataService.generateAndRegisterUsers(count);
+            result.put("executionTimeMs", System.currentTimeMillis() - startTime);
+
+            log.info("사용자 생성 완료: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("사용자 생성 실패: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
+
 
     @PostMapping("/generate/posts")
     @Operation(summary = "게시글 더미 데이터 생성")
@@ -161,6 +248,58 @@ public class FakeDataController {
 
         } catch (Exception e) {
             log.error("댓글 좋아요 생성 실패:{}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @PostMapping("/generate/friendships")
+    @Operation(summary = "친구 관계 더미 데이터 생성")
+    public ResponseEntity<Map<String, Object>> generateFriendships(
+            @RequestParam(name = "friendshipRatio", defaultValue = "0.2")
+            @Parameter(description = "사용자당 친구 관계 비율 (0.0 ~ 1.0)") double friendshipRatio
+    ) {
+        try {
+            log.info("친구 관계 생성 시작. 비율: {}", friendshipRatio);
+            long startTime = System.currentTimeMillis();
+
+            fakeDataService.generateFriendships(friendshipRatio);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("friendshipRatio", friendshipRatio);
+            result.put("executionTimeMs", System.currentTimeMillis() - startTime);
+
+            log.info("친구 관계 생성 완료: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("친구 관계 생성 실패: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @PostMapping("/generate/friendRequests")
+    @Operation(summary = "친구 요청 더미 데이터 생성")
+    public ResponseEntity<Map<String, Object>> generateFriendRequests(
+            @RequestParam(name = "requestPerUser", defaultValue = "5")
+            @Parameter(description = "사용자당 친구 요청 수") int requestsPerUser
+    ) {
+        try {
+            log.info("친구 요청 생성 시작. 사용자당 요청 수: {}", requestsPerUser);
+            long startTime = System.currentTimeMillis();
+
+            fakeDataService.generateFriendRequests(requestsPerUser);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("requestsPerUser", requestsPerUser);
+            result.put("executionTimeMs", System.currentTimeMillis() - startTime);
+
+            log.info("친구 요청 생성 완료: {}", result);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("친구 요청 생성 실패: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

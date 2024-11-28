@@ -17,5 +17,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.id NOT IN (SELECT f.user2.id FROM Friendship f WHERE f.user1.id = :userId) AND u.id <> :userId")
     List<User> findNonFriendsByUserId(@Param("userId") Long userId);
     // 앞으로: 추가적인 쿼리 메서드 정의 (예: 사용자 삭제 등)
+
+    // 특정 사용자명이 존재하는지 확인하는 메서드
+    boolean existsByUsername(String username);
+
 }
 

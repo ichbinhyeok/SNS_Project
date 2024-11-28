@@ -1,14 +1,16 @@
 package com.example.sns_project.service;
 
+import com.example.sns_project.dto.UserDTO;
+import com.example.sns_project.dto.UserRegistrationDTO;
+import com.example.sns_project.enums.RequestStatus;
 import com.example.sns_project.model.*;
-import com.example.sns_project.repository.CommentRepository;
-import com.example.sns_project.repository.PostRepository;
-import com.example.sns_project.repository.UserRepository;
+import com.example.sns_project.repository.*;
 import com.github.javafaker.Faker;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,13 @@ public class FakeDataService {
     private final CommentRepository commentRepository;
     private final EntityManager entityManager;
     private final CommentService commentService;
+    private final FriendRequestRepository friendRequestRepository;
+    private final FriendshipRepository friendshipRepository;
+    private final FriendService friendService;
+    private final RoleRepository roleRepository;
+    private final AuthService authService;
+
+    private final BCryptPasswordEncoder passwordEncoder;
 
     // Faker 객체를 통해 랜덤한 더미 데이터 생성
     private final Faker faker;
@@ -48,7 +57,12 @@ public class FakeDataService {
             PostService postService,
             CommentRepository commentRepository,
             CommentService commentService,
-            EntityManager entityManager
+            EntityManager entityManager,
+            FriendRequestRepository friendRequestRepository,
+            FriendshipRepository friendshipRepository,
+            FriendService friendService,
+            RoleRepository roleRepository,
+            AuthService authService
     ) {
 
         this.userRepository = userRepository;
@@ -57,10 +71,103 @@ public class FakeDataService {
         this.commentService = commentService;
         this.entityManager = entityManager;
         this.postService = postService;
+        this.friendRequestRepository = friendRequestRepository;
+        this.friendshipRepository = friendshipRepository;
+        this.friendService = friendService;
+        this.roleRepository = roleRepository;
+        this.authService = authService;
+
+        this.passwordEncoder = new BCryptPasswordEncoder();
         // 한국어 로케일로 Faker 초기화
         this.faker = new Faker(Locale.KOREAN);
     }
 
+
+    @Transactional
+    public Map<String, Object> generateAndRegisterUsers(int count) {
+        log.info("사용자 더미 데이터 생성 시작. 목표 생성 수: {}", count);
+        long startTime = System.currentTimeMillis();
+
+        int batchSize = 500;
+        int processedCount = 0;
+        List<String> registeredUsernames = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 기본 사용자 역할 미리 조회
+            Role userRole = roleRepository.findByName("ROLE_USER")
+                    .orElseThrow(() -> new RuntimeException("기본 사용자 역할(ROLE_USER)이 존재하지 않습니다."));
+
+            for (int i = 0; i < count; i++) {
+                // 고유한 사용자명 생성 (중복 방지)
+                String username = generateUniqueUsername();
+
+                // 사용자 등록 DTO 생성
+                UserRegistrationDTO userRegistrationDTO = new UserRegistrationDTO();
+                userRegistrationDTO.setUsername(username);
+                userRegistrationDTO.setEmail(generateUniqueEmail(username));
+                userRegistrationDTO.setPassword("123"); // 테스트용 기본 비밀번호
+
+
+                try {
+                    UserDTO registeredUser = authService.register(userRegistrationDTO);
+                    registeredUsernames.add(registeredUser.getUsername());
+                    processedCount++;
+
+                    // 배치 처리를 위한 주기적인 플러시
+                    if (processedCount % batchSize == 0) {
+                        entityManager.flush();
+                        entityManager.clear();
+                        log.info("사용자 생성 진행 중... (처리된 사용자 수: {})", processedCount);
+                    }
+                } catch (Exception e) {
+                    log.warn("사용자 '{}' 생성 실패: {}", username, e.getMessage());
+                    continue;
+                }
+            }
+
+            // 최종 결과 수집
+            long executionTime = System.currentTimeMillis() - startTime;
+            result.put("status", "success");
+            result.put("generatedUsers", processedCount);
+            result.put("usernames", registeredUsernames);
+            result.put("executionTimeMs", executionTime);
+
+            log.info("사용자 생성 완료. 총 생성 수: {}, 소요 시간: {}ms", processedCount, executionTime);
+
+        } catch (Exception e) {
+            log.error("사용자 생성 중 오류 발생: {}", e.getMessage(), e);
+            result.put("status", "error");
+            result.put("error", e.getMessage());
+            result.put("completedCount", processedCount);
+        }
+
+        return result;
+    }
+
+    /**
+     * 중복되지 않는 고유한 사용자명 생성
+     */
+    private String generateUniqueUsername() {
+        String username;
+        int attempts = 0;
+        do {
+            username = faker.name().username();
+            if (attempts++ > 10) {
+                // 충돌 방지를 위해 랜덤 숫자 추가
+                username = username + ThreadLocalRandom.current().nextInt(1000);
+            }
+        } while (userRepository.existsByUsername(username));
+        return username;
+    }
+
+    /**
+     * 사용자명 기반의 고유한 이메일 주소 생성
+     */
+    private String generateUniqueEmail(String username) {
+        return username.toLowerCase() + "@" +
+                faker.internet().domainName().toLowerCase();
+    }
     /**
      * 더미 게시글 생성 메소드
      *
@@ -333,5 +440,191 @@ public class FakeDataService {
         log.info("댓글 좋아요 생성 완료. 총 생성 수: {}", processedCount);
     }
 
+
+    /**
+     * 친구 관계 더미 데이터 생성
+     * 친구 관계와 친구 요청의 방향성을 고려하여 생성
+     */
+    @Transactional
+    public void generateFriendships(double friendshipRatio) {
+        List<User> allUsers = userRepository.findAll();
+        int batchSize = 5000;
+        int processedCount = 0;
+
+        // 친구 관계 추적을 위한 Set (양방향)
+        Set<String> existingFriendships = new HashSet<>();
+
+        // 친구 요청 추적을 위한 Map (단방향)
+        // Key: "sender_receiver", Value: FriendRequest
+        Map<String, FriendRequest> existingRequests = friendRequestRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        request -> generateRequestKey(
+                                request.getSender().getId(),
+                                request.getReceiver().getId()
+                        ),
+                        request -> request,
+                        (existing, replacement) -> existing  // 충돌 시 기존 요청 유지
+                ));
+
+        for (User user : allUsers) {
+            int numberOfFriends = (int) ((allUsers.size() - 1) * friendshipRatio);
+
+            List<User> potentialFriends = allUsers.stream()
+                    .filter(u -> !u.equals(user))
+                    .collect(Collectors.toList());
+            Collections.shuffle(potentialFriends);
+
+            for (int i = 0; i < numberOfFriends && i < potentialFriends.size(); i++) {
+                User friend = potentialFriends.get(i);
+                String friendshipKey = generateFriendshipKey(user.getId(), friend.getId());
+
+                if (!existingFriendships.contains(friendshipKey)) {
+                    // 친구 관계 생성
+                    Friendship friendship = new Friendship();
+                    friendship.setUser1(user);
+                    friendship.setUser2(friend);
+                    entityManager.persist(friendship);
+
+                    // 양방향 요청 키 생성
+                    String forwardRequestKey = generateRequestKey(user.getId(), friend.getId());
+                    String reverseRequestKey = generateRequestKey(friend.getId(), user.getId());
+
+                    // 기존 요청 확인 및 처리
+                    FriendRequest existingForwardRequest = existingRequests.get(forwardRequestKey);
+                    FriendRequest existingReverseRequest = existingRequests.get(reverseRequestKey);
+
+                    // 이미 존재하는 요청 처리
+                    if (existingForwardRequest != null) {
+                        existingForwardRequest.setStatus(RequestStatus.ACCEPTED);
+                        entityManager.merge(existingForwardRequest);
+                    } else if (existingReverseRequest != null) {
+                        existingReverseRequest.setStatus(RequestStatus.ACCEPTED);
+                        entityManager.merge(existingReverseRequest);
+                    } else {
+                        // 새로운 요청 생성
+                        FriendRequest newRequest = new FriendRequest();
+                        newRequest.setSender(user);
+                        newRequest.setReceiver(friend);
+                        newRequest.setStatus(RequestStatus.ACCEPTED);
+                        entityManager.persist(newRequest);
+                        existingRequests.put(forwardRequestKey, newRequest);
+                    }
+
+                    existingFriendships.add(friendshipKey);
+                    processedCount++;
+
+                    if (processedCount % batchSize == 0) {
+                        entityManager.flush();
+                        entityManager.clear();
+                        log.info("친구 관계 생성 중... (처리된 관계 수: {})", processedCount);
+                    }
+                }
+            }
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+        log.info("친구 관계 생성 완료. 총 생성된 관계 수: {}", processedCount);
+    }
+
+
+    /**
+     * 친구 요청 더미 데이터 생성
+     * 각 사용자마다 지정된 수만큼의 친구 요청을 랜덤하게 생성하되,
+     * 기존 친구 관계와 이미 존재하는 요청은 제외
+     *
+     * @param requestsPerUser 사용자당 생성할 친구 요청 수
+     */
+    @Transactional
+    public void generateFriendRequests(int requestsPerUser) {
+        List<User> allUsers = userRepository.findAll();
+        int batchSize = 5000;
+        int processedCount = 0;
+
+        // 이미 친구인 관계를 조회하여 중복 방지
+        Set<String> existingFriendships = friendshipRepository.findAll().stream()
+                .map(f -> generateFriendshipKey(f.getUser1().getId(), f.getUser2().getId()))
+                .collect(Collectors.toSet());
+
+        // 이미 존재하는 친구 요청을 조회 (PENDING 상태)
+        Set<String> existingRequests = friendRequestRepository.findAll().stream()
+                .filter(request -> request.getStatus() == RequestStatus.PENDING)
+                .map(request -> generateFriendshipKey(
+                        request.getSender().getId(),
+                        request.getReceiver().getId()
+                ))
+                .collect(Collectors.toSet());
+
+        for (User sender : allUsers) {
+            // 잠재적 수신자 목록 생성 (현재 사용자 제외)
+            List<User> potentialReceivers = allUsers.stream()
+                    .filter(u -> !u.equals(sender))
+                    .filter(receiver -> {
+                        String key = generateFriendshipKey(sender.getId(), receiver.getId());
+                        // 이미 친구가 아니고, 대기 중인 요청도 없는 경우만 포함
+                        return !existingFriendships.contains(key) && !existingRequests.contains(key);
+                    })
+                    .collect(Collectors.toList());
+
+            // 수신자 목록을 섞어서 랜덤성 확보
+            Collections.shuffle(potentialReceivers);
+
+            // 설정된 수만큼 요청 생성
+            for (int i = 0; i < requestsPerUser && i < potentialReceivers.size(); i++) {
+                User receiver = potentialReceivers.get(i);
+
+                FriendRequest request = new FriendRequest();
+                request.setSender(sender);
+                request.setReceiver(receiver);
+                request.setStatus(RequestStatus.PENDING);
+
+                entityManager.persist(request);
+                processedCount++;
+
+                // 생성된 요청 키를 기존 요청 세트에 추가하여 중복 방지
+                existingRequests.add(generateFriendshipKey(sender.getId(), receiver.getId()));
+
+                // 배치 처리를 위한 주기적인 플러시
+                if (processedCount % batchSize == 0) {
+                    entityManager.flush();
+                    entityManager.clear();
+                    log.info("친구 요청 생성 중... (처리된 요청 수: {})", processedCount);
+                }
+            }
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+        log.info("친구 요청 생성 완료. 총 생성된 요청 수: {}", processedCount);
+    }
+
+
+    /**
+     * 친구 관계의 키 생성 (양방향)
+     * 항상 작은 ID가 앞에 오도록 하여 양방향 관계를 하나의 키로 표현
+     */
+    private String generateFriendshipKey(Long userId1, Long userId2) {
+        return userId1 < userId2
+                ? userId1 + "_" + userId2
+                : userId2 + "_" + userId1;
+    }
+
+    /**
+     * 친구 요청의 키 생성 (단방향)
+     * 요청의 방향성을 보존하기 위해 sender와 receiver의 순서를 유지
+     */
+    private String generateRequestKey(Long senderId, Long receiverId) {
+        return senderId + "_" + receiverId;
+    }
+
+    /**
+     * 랜덤한 친구 요청 상태를 반환하는 메소드
+     */
+    private RequestStatus getRandomRequestStatus() {
+        double random = ThreadLocalRandom.current().nextDouble();
+        if (random < 0.6) return RequestStatus.ACCEPTED;
+        if (random < 0.8) return RequestStatus.PENDING;
+        return RequestStatus.REJECTED;
+    }
 
 }

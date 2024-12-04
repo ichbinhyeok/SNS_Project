@@ -21,17 +21,27 @@ public class UserController {
 
     @GetMapping("/{id}")
     @Operation(summary = "사용자 정보 조회", description = "특정 사용자의 정보를 조회합니다.")
-    public ResponseEntity<UserDTO> getUserById(@Parameter(description = "사용자 ID") @PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserById(@Parameter(description = "사용자 ID") @PathVariable("id") Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    // 사용자 정보 수정 (비밀번호 제외)
     @PutMapping("/{id}")
-    @Operation(summary = "사용자 정보 수정", description = "특정 사용자의 정보를 수정합니다.")
-    public ResponseEntity<UserDTO> updateUser(
-            @Parameter(description = "사용자 ID") @PathVariable Long id,
-            @Parameter(description = "사용자 정보") @RequestBody UserDTO userDTO,
+    @Operation(summary = "사용자 정보 수정", description = "사용자의 기본 정보(이름, 이메일 등)를 수정합니다.")
+    public ResponseEntity<UserDTO> updateUserInfo(
+            @Parameter(description = "사용자 ID") @PathVariable("id") Long id,
+            @Parameter(description = "사용자 정보") @RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.updateUserInfo(id, userDTO));
+    }
+
+    // 비밀번호 변경
+    @PutMapping("/{id}/password")
+    @Operation(summary = "비밀번호 변경", description = "사용자의 비밀번호를 변경합니다.")
+    public ResponseEntity<Void> updatePassword(
+            @Parameter(description = "사용자 ID") @PathVariable("id") Long id,
             @Parameter(description = "비밀번호 수정 정보") @RequestBody UserPasswordUpdateDTO passwordDTO) {
-        return ResponseEntity.ok(userService.updateUser(id, userDTO, passwordDTO));
+        userService.updatePassword(id, passwordDTO);
+        return ResponseEntity.ok().build();
     }
 
 

@@ -37,7 +37,7 @@ public class CommentController {
     @PutMapping("/{commentId}")
     @Operation(summary = "댓글 수정", description = "특정 댓글을 수정합니다.")
     public ResponseEntity<CommentDTO> updateComment(
-            @Parameter(description = "댓글 ID") @PathVariable Long commentId,
+            @Parameter(description = "댓글 ID") @PathVariable("commentId") Long commentId,
             @RequestBody CommentDTO commentDTO) {
         CommentDTO updatedComment = commentService.updateComment(commentId, commentDTO);
         return ResponseEntity.ok(updatedComment);
@@ -45,7 +45,7 @@ public class CommentController {
 
     @DeleteMapping("/{commentId}")
     @Operation(summary = "댓글 삭제", description = "특정 댓글을 삭제합니다.")
-    public ResponseEntity<Void> deleteComment(@Parameter(description = "댓글 ID") @PathVariable Long commentId) {
+    public ResponseEntity<Void> deleteComment(@Parameter(description = "댓글 ID") @PathVariable("commentId") Long commentId) {
         commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();
     }
@@ -53,8 +53,8 @@ public class CommentController {
     @PostMapping("/{commentId}/like/{userId}")
     @Operation(summary = "댓글 좋아요", description = "특정 댓글에 좋아요를 추가합니다.")
     public ResponseEntity<Void> likeComment(
-            @Parameter(description = "댓글 ID") @PathVariable Long commentId,
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+            @Parameter(description = "댓글 ID") @PathVariable("commentId") Long commentId,
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
         commentService.likeComment(commentId, userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -62,8 +62,8 @@ public class CommentController {
     @DeleteMapping("/{commentId}/like/{userId}")
     @Operation(summary = "댓글 좋아요 취소", description = "특정 댓글의 좋아요를 취소합니다.")
     public ResponseEntity<Void> unlikeComment(
-            @Parameter(description = "댓글 ID") @PathVariable Long commentId,
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+            @Parameter(description = "댓글 ID") @PathVariable("commentId") Long commentId,
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
         commentService.unlikeComment(commentId, userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -71,7 +71,7 @@ public class CommentController {
     @PostMapping("/{parentCommentId}/replies")
     @Operation(summary = "대댓글 추가", description = "특정 댓글에 대댓글을 추가합니다.")
     public ResponseEntity<CommentDTO> addReply(
-            @Parameter(description = "부모 댓글 ID") @PathVariable Long parentCommentId,
+            @Parameter(description = "부모 댓글 ID") @PathVariable("parentCommentId") Long parentCommentId,
             @RequestBody CommentDTO replyDTO) {
         CommentDTO replyComment = commentService.addReply(parentCommentId, replyDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(replyComment);
@@ -79,7 +79,7 @@ public class CommentController {
 
     @GetMapping("/{parentCommentId}/replies")
     @Operation(summary = "대댓글 조회", description = "특정 댓글에 대한 대댓글을 조회합니다.")
-    public ResponseEntity<List<CommentDTO>> getReplies(@Parameter(description = "부모 댓글 ID") @PathVariable Long parentCommentId) {
+    public ResponseEntity<List<CommentDTO>> getReplies(@Parameter(description = "부모 댓글 ID") @PathVariable("parentCommentId") Long parentCommentId) {
         List<CommentDTO> replies = commentService.getReplies(parentCommentId);
         return ResponseEntity.ok(replies);
     }
@@ -88,8 +88,8 @@ public class CommentController {
     @PostMapping("/replies/{replyId}/like/{userId}")
     @Operation(summary = "대댓글 좋아요", description = "특정 대댓글에 좋아요를 추가합니다.")
     public ResponseEntity<Void> likeReply(
-            @Parameter(description = "대댓글 ID") @PathVariable Long replyId,
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+            @Parameter(description = "대댓글 ID") @PathVariable("replyId") Long replyId,
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
         commentService.likeComment(replyId, userId); // 대댓글도 댓글과 동일하게 처리
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -97,8 +97,8 @@ public class CommentController {
     @DeleteMapping("/replies/{replyId}/like/{userId}")
     @Operation(summary = "대댓글 좋아요 취소", description = "특정 대댓글의 좋아요를 취소합니다.")
     public ResponseEntity<Void> unlikeReply(
-            @Parameter(description = "대댓글 ID") @PathVariable Long replyId,
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+            @Parameter(description = "대댓글 ID") @PathVariable("replyId") Long replyId,
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
         commentService.unlikeComment(replyId, userId); // 대댓글도 댓글과 동일하게 처리
         return ResponseEntity.status(HttpStatus.OK).build();
     }

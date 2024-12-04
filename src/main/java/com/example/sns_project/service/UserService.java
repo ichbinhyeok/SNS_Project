@@ -35,22 +35,32 @@ public class UserService {
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 
-    public UserDTO updateUser(Long id, UserDTO userDTO, UserPasswordUpdateDTO passwordDTO) {
+    // 사용자 정보 수정
+    public UserDTO updateUserInfo(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
 
-        if (passwordDTO.getPassword() != null && !passwordDTO.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
-        }
-
         userRepository.save(user);
 
         return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 
+    // 비밀번호 변경
+    public void updatePassword(Long id, UserPasswordUpdateDTO passwordDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (passwordDTO.getPassword() != null && !passwordDTO.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
+        } else {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+
+        userRepository.save(user);
+    }
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

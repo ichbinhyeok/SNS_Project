@@ -1,5 +1,6 @@
 package com.example.sns_project.service;
 
+import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.RequestStatus;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.FriendRequest;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +42,7 @@ public class FriendServiceTest {
 
     private User sender; // 친구 요청을 보내는 사용자
     private User receiver; // 친구 요청을 받는 사용자
+    private UserDTO receiverDTO;
     private FriendRequest friendRequest;
     private Friendship friendship;
 
@@ -114,24 +117,54 @@ public class FriendServiceTest {
     @Test
     @DisplayName("친구 요청 수락_성공")
     public void testAcceptFriendRequest() {
-        // Mocking friendRequestRepository에서 친구 요청을 찾는 부분
+        // Given
+        friendRequest.setStatus(RequestStatus.PENDING);
         when(friendRequestRepository.findById(friendRequest.getId())).thenReturn(Optional.of(friendRequest));
+        when(friendshipRepository.existsByUser1IdAndUser2Id(anyLong(), anyLong())).thenReturn(false);
 
-        // FriendService의 acceptFriendRequest 메소드를 호출
+        // When
         friendService.acceptFriendRequest(friendRequest.getId());
 
-        // friendshipRepository.save()가 호출되었는지 확인
+        // Then
         verify(friendshipRepository).save(any(Friendship.class));
-
-        // Friendship 객체가 제대로 설정되었는지 검증
-        assertThat(friendship.getUser1().getUsername()).isEqualTo(sender.getUsername());
-        assertThat(friendship.getUser2().getUsername()).isEqualTo(receiver.getUsername());
-
-        // friendRequest의 상태가 ACCEPTED로 변경되었는지 확인
         assertThat(friendRequest.getStatus()).isEqualTo(RequestStatus.ACCEPTED);
+        verify(notificationService).sendFriendAddedNotification(
+                friendRequest.getReceiver().getId(),
+                friendRequest.getSender().getId());
+    }
 
-        // 친구 추가 알림이 전송되었는지 확인
-        verify(notificationService).sendFriendAddedNotification(friendRequest.getReceiver().getId(), friendRequest.getSender().getId());
+    @Test
+    @DisplayName("친구 요청 수락_실패_이미 수락된 요청")
+    public void testAcceptFriendRequest_AlreadyAccepted() {
+        friendRequest.setStatus(RequestStatus.ACCEPTED);
+        when(friendRequestRepository.findById(friendRequest.getId())).thenReturn(Optional.of(friendRequest));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                friendService.acceptFriendRequest(friendRequest.getId()));
+        assertThat(exception.getMessage()).isEqualTo("Friend request is accepted");
+    }
+
+    @Test
+    @DisplayName("친구 요청 수락_실패_이미 거절된 요청")
+    public void testAcceptFriendRequest_AlreadyRejected() {
+        friendRequest.setStatus(RequestStatus.REJECTED);
+        when(friendRequestRepository.findById(friendRequest.getId())).thenReturn(Optional.of(friendRequest));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                friendService.acceptFriendRequest(friendRequest.getId()));
+        assertThat(exception.getMessage()).isEqualTo("Friend request is rejected");
+    }
+
+    @Test
+    @DisplayName("친구 요청 수락_실패_이미 친구인 경우")
+    public void testAcceptFriendRequest_AlreadyFriends() {
+        friendRequest.setStatus(RequestStatus.PENDING);
+        when(friendRequestRepository.findById(friendRequest.getId())).thenReturn(Optional.of(friendRequest));
+        when(friendshipRepository.existsByUser1IdAndUser2Id(anyLong(), anyLong())).thenReturn(true);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                friendService.acceptFriendRequest(friendRequest.getId()));
+        assertThat(exception.getMessage()).isEqualTo("Friendship already exists");
     }
 
 
@@ -158,8 +191,8 @@ public class FriendServiceTest {
     @Test
     @DisplayName("친구 목록 조회_성공")
     public void testGetFriends(){
-        when(friendshipRepository.findFriendsByUserId(sender.getId())).thenReturn(List.of(receiver));
-        List<User> friends = friendService.getFriends(sender.getId());
+        when(friendshipRepository.findFriendsByUserId(sender.getId())).thenReturn(List.of(receiverDTO));
+        List<UserDTO> friends = friendService.getFriends(sender.getId());
         assertThat(friends).hasSize(1);
         assertThat(friends.get(0).getUsername()).isEqualTo(receiver.getUsername());
 

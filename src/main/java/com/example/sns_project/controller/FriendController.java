@@ -1,5 +1,6 @@
 package com.example.sns_project.controller;
 
+import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.RequestStatus;
 import com.example.sns_project.model.FriendRequest;
 import com.example.sns_project.model.User;
@@ -47,9 +48,9 @@ public class FriendController {
 
     @GetMapping("/{userId}/friends")
     @Operation(summary = "친구 목록 조회", description = "특정 사용자의 친구 목록을 조회합니다.")
-    public ResponseEntity<List<User>> getFriends(
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
-        List<User> friends = friendService.getFriends(userId);
+    public ResponseEntity<List<UserDTO>> getFriends(
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
+        List<UserDTO> friends = friendService.getFriends(userId);
         return ResponseEntity.ok(friends);
     }
 

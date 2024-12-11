@@ -1,5 +1,8 @@
 package com.example.sns_project.redis.sevice;
 
+import com.example.sns_project.redis.model.RedisTest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class RedisService {
     private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper; // JSON 직렬화/역직렬화 도구
 
     public void setValues(String key, String data) {
         ValueOperations<String, String> values = redisTemplate.opsForValue();
@@ -68,4 +72,25 @@ public class RedisService {
     public boolean checkExistsValue(String value) {
         return !value.equals("false");
     }
+
+    // 엔티티 저장
+    public void saveEntity(String key, RedisTest entity, Duration duration) throws JsonProcessingException {
+        String jsonValue = objectMapper.writeValueAsString(entity); // 엔티티를 JSON으로 변환
+        redisTemplate.opsForValue().set(key, jsonValue, duration);  // Redis에 저장
+    }
+
+    // 엔티티 조회
+    public RedisTest getEntity(String key) throws JsonProcessingException {
+        String jsonValue = redisTemplate.opsForValue().get(key); // JSON 형태로 데이터 조회
+        if (jsonValue == null) {
+            return null;
+        }
+        return objectMapper.readValue(jsonValue, RedisTest.class); // JSON을 엔티티로 변환
+    }
+
+    // 모든 엔티티 삭제
+    public void deleteEntity(String key) {
+        redisTemplate.delete(key);
+    }
+
 }

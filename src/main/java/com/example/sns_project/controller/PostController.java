@@ -38,7 +38,7 @@ public class PostController {
 
     @PutMapping("/{id}")
     @Operation(summary = "게시글 수정", description = "특정 ID의 게시글을 수정합니다.")
-    public ResponseEntity<PostDTO> updatePost(@Parameter(description = "게시글 ID") @PathVariable Long id,
+    public ResponseEntity<PostDTO> updatePost(@Parameter(description = "게시글 ID") @PathVariable("id") Long id,
                                               @Parameter(description = "수정할 게시글 데이터") @RequestBody PostDTO postDTO) {
         PostDTO updatedPost = postService.updatePost(id, postDTO);
         return ResponseEntity.ok(updatedPost);
@@ -46,7 +46,7 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "게시글 삭제", description = "특정 ID의 게시글을 삭제합니다.")
-    public ResponseEntity<Void> deletePost(@Parameter(description = "게시글 ID") @PathVariable Long id) {
+    public ResponseEntity<Void> deletePost(@Parameter(description = "게시글 ID") @PathVariable("id") Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }

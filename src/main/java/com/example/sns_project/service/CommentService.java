@@ -85,7 +85,6 @@ public class CommentService {
         commentRepository.delete(comment); // 부모 댓글 삭제 시 대댓글도 함께 삭제됨
     }
 
-    // 댓글 좋아요 기능 추가
     @Transactional
     public void likeComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -94,14 +93,18 @@ public class CommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        // 중복 좋아요 체크 추가
+        if (comment.getLikes().stream()
+                .anyMatch(like -> like.getUser().getId().equals(userId))) {
+            throw new IllegalStateException("Already liked this comment");
+        }
+
         CommentLike commentLike = new CommentLike();
         commentLike.setComment(comment);
         commentLike.setUser(user);
         comment.getLikes().add(commentLike);
         user.getLikedComments().add(commentLike);
-        commentRepository.save(comment);
 
-        // 알림 생성
         notificationService.sendCommentLikeNotification(comment.getUser().getId(), user.getUsername());
     }
 

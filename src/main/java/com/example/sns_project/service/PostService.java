@@ -7,6 +7,7 @@ import com.example.sns_project.enums.NotificationType;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.*;
 import com.example.sns_project.repository.CommentRepository;
+import com.example.sns_project.repository.PostLikeRepository;
 import com.example.sns_project.repository.PostRepository;
 import com.example.sns_project.repository.UserRepository;
 import com.github.javafaker.Faker;
@@ -31,6 +32,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final CommentService commentService;
     private final NotificationService notificationService;
+    private final PostLikeRepository postLikeRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -94,6 +96,11 @@ public class PostService {
     // 현재 구현된 기능: 게시물 좋아요 기능
     @Transactional
     public void likePost(Long postId, Long userId) {
+        // 이미 좋아요 했는지 확인
+        if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
+            throw new IllegalStateException("이미 좋아요를 누른 게시물입니다.");
+        }
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         User user = userService.findById(userId);
@@ -101,13 +108,10 @@ public class PostService {
         PostLike postLike = new PostLike();
         postLike.setPost(post);
         postLike.setUser(user);
-        post.getLikes().add(postLike);
-        user.getLikedPosts().add(postLike);
 
-        // 알림 생성
+        postLikeRepository.save(postLike);
+
         notificationService.sendPostLikeNotification(post.getUser().getId(), user.getUsername());
-
-        postRepository.save(post);
     }
 
     // 현재 구현된 기능: 게시물 좋아요 취소
@@ -128,6 +132,7 @@ public class PostService {
     }
 
     // 현재 구현된 기능: 게시물에 댓글 추가
+    // 날짜1205필요없는 기능 CommentService에서 구현함
     @Transactional
     public CommentDTO addComment(Long postId, Long userId, String content) {
         Post post = postRepository.findById(postId)

@@ -25,6 +25,9 @@ repositories {
 }
 
 
+compileJava {
+    options.compilerArgs << '-parameters'
+}
 
 dependencies {
     // Spring Boot Starter 의존성

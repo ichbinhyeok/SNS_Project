@@ -1,9 +1,11 @@
 package com.example.sns_project.service;
 
 // 사용자 인증 및 권한 관리를 처리하는 서비스
+import com.example.sns_project.dto.AuthResponse;
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.dto.UserRegistrationDTO; // UserRegistrationDTO 추가
+import com.example.sns_project.jwt.JwtUtil;
 import com.example.sns_project.model.Role; // Role 임포트
 import com.example.sns_project.model.User;
 import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
@@ -19,30 +21,29 @@ import java.util.Optional;
 
 @Service
 public class AuthService {
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    private final UserRepository userRepository;  // UserRepository 의존성 주입
-    private final RoleRepository roleRepository;  // RoleRepository 의존성 주입
-    private final BCryptPasswordEncoder passwordEncoder; // 비밀번호 암호화를 위한 인코더
-
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository) {
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder(); // 비밀번호 인코더 초기화
+        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.jwtUtil = jwtUtil;
     }
 
-    public String login(LoginRequest loginRequest) {
-        // 사용자 조회
+    public AuthResponse login(LoginRequest loginRequest) {
         Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            // 비밀번호 확인
             if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                // 인증 성공 (세션 관리 등은 Spring Security가 처리)
-                return "로그인 성공"; // 로그인 성공 메시지 반환
+                String token = jwtUtil.generateToken(user.getUsername());
+                return new AuthResponse(token, "로그인 성공");
             }
         }
-        return "로그인 실패"; // 로그인 실패 메시지 반환
+        throw new RuntimeException("Invalid credentials");
     }
 
     public UserDTO register(UserRegistrationDTO userRegistrationDTO) {

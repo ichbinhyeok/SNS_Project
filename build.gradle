@@ -40,9 +40,10 @@ dependencies {
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
 
-
+//jwt
     implementation 'io.jsonwebtoken:jjwt:0.9.1' // 최신 버전을 확인하고 필요에 따라 업데이트하세요
-
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
     // 추가적인 기능을 위한 의존성
     implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket을 위한 Starter

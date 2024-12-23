@@ -1,6 +1,7 @@
 package com.example.sns_project.controller;
 
 // 사용자 인증 관련 API를 처리하는 컨트롤러
+import com.example.sns_project.dto.AuthResponse;
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.dto.UserRegistrationDTO;
@@ -26,9 +27,9 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "로그인", description = "사용자가 로그인합니다.")
-    public ResponseEntity<String> login(@Parameter(description = "로그인 요청 데이터") @RequestBody LoginRequest loginRequest) {
-        String response = authService.login(loginRequest);
-        return ResponseEntity.ok(response);  // 로그인 결과 반환
+    public ResponseEntity<AuthResponse> login(@Parameter(description = "로그인 요청 데이터") @RequestBody LoginRequest loginRequest) {
+        AuthResponse response = authService.login(loginRequest);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")

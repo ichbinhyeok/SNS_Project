@@ -2,15 +2,22 @@ package com.example.sns_project.controller;
 
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
+import com.example.sns_project.exception.ForbiddenException;
 import com.example.sns_project.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.example.sns_project.util.SortUtils.getSortOrder;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -25,35 +32,59 @@ public class PostController {
 
     @PostMapping
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
-    public ResponseEntity<PostDTO> createPost(@Parameter(description = "게시글 데이터") @RequestBody PostDTO postDTO) {
-        PostDTO createdPost = postService.createPost(postDTO);
+    public ResponseEntity<PostDTO> createPost(
+            @Parameter(description = "게시글 데이터") @RequestBody PostDTO postDTO,
+            HttpServletRequest request
+    ) {
+        Long userId = (Long) request.getAttribute("userId");
+        PostDTO createdPost = postService.createPost(postDTO, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "게시글 조회", description = "특정 ID의 게시글을 조회합니다.")
-    public ResponseEntity<PostDTO> getPostById(@Parameter(description = "게시글 ID") @PathVariable("id") Long id) {
+    public ResponseEntity<PostDTO> getPostById(
+            @Parameter(description = "게시글 ID") @PathVariable("id") Long id) {
         return ResponseEntity.ok(postService.getPostById(id));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "게시글 수정", description = "특정 ID의 게시글을 수정합니다.")
-    public ResponseEntity<PostDTO> updatePost(@Parameter(description = "게시글 ID") @PathVariable("id") Long id,
-                                              @Parameter(description = "수정할 게시글 데이터") @RequestBody PostDTO postDTO) {
+    public ResponseEntity<?> updatePost(
+            @Parameter(description = "게시글 ID") @PathVariable("id") Long id,
+            @Parameter(description = "수정할 게시글 데이터") @RequestBody PostDTO postDTO,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        PostDTO existingPost = postService.getPostById(id);
+
+        if (!existingPost.getAuthor().getId().equals(userId)) {
+            throw new ForbiddenException("본인의 게시글만 수정할 수 있습니다.");
+        }
+
         PostDTO updatedPost = postService.updatePost(id, postDTO);
         return ResponseEntity.ok(updatedPost);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "게시글 삭제", description = "특정 ID의 게시글을 삭제합니다.")
-    public ResponseEntity<Void> deletePost(@Parameter(description = "게시글 ID") @PathVariable("id") Long id) {
+    public ResponseEntity<?> deletePost(
+            @Parameter(description = "게시글 ID") @PathVariable("id") Long id,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        PostDTO existingPost = postService.getPostById(id);
+
+        if (!existingPost.getAuthor().getId().equals(userId)) {
+            throw new ForbiddenException("본인의 게시글만 수정할 수 있습니다.");
+        }
+
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "특정 사용자의 게시글 조회", description = "특정 사용자가 작성한 모든 게시글을 조회합니다.")
-    public ResponseEntity<List<PostDTO>> getPostsByUserId(@Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
+    public ResponseEntity<List<PostDTO>> getPostsByUserId(
+            @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
         List<PostDTO> posts = postService.getPostByUserId(userId);
         return ResponseEntity.ok(posts);
     }
@@ -65,43 +96,60 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
-    @PostMapping("/{postId}/like/{userId}")
+    @GetMapping
+    @Operation(summary = "게시글 목록 페이징 조회", description = "페이지 단위로 게시글을 조회합니다.")
+    public ResponseEntity<Page<PostDTO>> getPostsByPagination(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,desc") String[] sort) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(getSortOrder(sort)));
+        Page<PostDTO> posts = postService.getPostsByPagination(pageRequest);
+        return ResponseEntity.ok(posts);
+    }
+
+    @PostMapping("/{postId}/like")
     @Operation(summary = "게시글 좋아요", description = "특정 게시글에 좋아요를 추가합니다.")
-    public ResponseEntity<Void> likePost(@Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
-                                         @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
+    public ResponseEntity<Void> likePost(
+            @Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
         postService.likePost(postId, userId);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{postId}/like/{userId}")
+    @DeleteMapping("/{postId}/like")
     @Operation(summary = "게시글 좋아요 취소", description = "특정 게시글의 좋아요를 취소합니다.")
-    public ResponseEntity<Void> unlikePost(@Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
-                                           @Parameter(description = "사용자 ID") @PathVariable("userId") Long userId) {
+    public ResponseEntity<Void> unlikePost(
+            @Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
         postService.unlikePost(postId, userId);
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @PostMapping("/{postId}/comments")
-    @Operation(summary = "댓글 추가", description = "특정 게시글에 댓글을 추가합니다.")
-    public ResponseEntity<CommentDTO> addComment(@Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
-                                                 @Parameter(description = "사용자 ID") @RequestParam("userId") Long userId,
-                                                 @Parameter(description = "댓글 내용") @RequestParam("content") String content) {
-        CommentDTO comment = postService.addComment(postId, userId, content);
-        return ResponseEntity.status(HttpStatus.CREATED).body(comment);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{postId}/comments")
     @Operation(summary = "게시글에 대한 댓글 조회", description = "특정 게시글에 대한 댓글을 조회합니다.")
-    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@Parameter(description = "게시글 ID") @PathVariable Long postId) {
+    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(
+            @Parameter(description = "게시글 ID") @PathVariable Long postId) {
         List<CommentDTO> comments = postService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
 
-    @PostMapping("/generate-DummyPosts")
-    public ResponseEntity<String> createDummyPosts(@RequestParam int count) {
-        postService.createDummyPost(count);
-        return ResponseEntity.ok("Dummy posts created: " + count);
-    }
+
+
+
+//    @PostMapping("/{postId}/comments")
+//    @Operation(summary = "댓글 추가", description = "특정 게시글에 댓글을 추가합니다.")
+//    public ResponseEntity<CommentDTO> addComment(@Parameter(description = "게시글 ID") @PathVariable("postId") Long postId,
+//                                                 @Parameter(description = "사용자 ID") @RequestParam("userId") Long userId,
+//                                                 @Parameter(description = "댓글 내용") @RequestParam("content") String content) {
+//        CommentDTO comment = postService.addComment(postId, userId, content);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(comment);
+//    }
+
+
+
 
     @PostMapping("/generate-DummyPostsByEM")
     public ResponseEntity<String> createDummyPostByEM(@RequestParam int count) {

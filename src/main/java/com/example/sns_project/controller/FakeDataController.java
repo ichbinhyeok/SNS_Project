@@ -45,7 +45,7 @@ public class FakeDataController {
             @RequestParam(name = "maxDepth", defaultValue = "2")
             @Parameter(description = "댓글 최대 깊이 (1: 대댓글 없음)") int maxDepth,
 
-            @RequestParam(name = "likeRatio", defaultValue = "0.4")
+            @RequestParam(name = "likeRatio", defaultValue = "0.1")
             @Parameter(description = "좋아요 비율 (0.0 ~ 1.0)") double likeRatio,
 
             @RequestParam(name = "withNotifications", defaultValue = "false")

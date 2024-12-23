@@ -15,6 +15,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -40,12 +42,13 @@ public class PostService {
 
     // 현재 구현된 기능: 게시물 생성
     @Transactional
-    public PostDTO createPost(PostDTO postDTO) {
+    public PostDTO createPost(PostDTO postDTO, long userId) {  // username 파라미터 추가
         Post post = new Post();
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
 
-        User user = userService.findById(postDTO.getAuthor().getId());
+        // username으로 사용자 찾기
+        User user = userService.findById(userId);  // findByUsername 메서드 필요
         post.setUser(user);
         postRepository.save(post);
 
@@ -174,30 +177,12 @@ public class PostService {
                 .toList();
     }
 
-
-    // 더미 포스트 값 넣기
-    @Transactional
-    public void createDummyPost(int count) {
-
-        for (int i = 0; i < count; i++) {
-            // 랜덤 사용자 선택
-            Faker faker = new Faker();
-            User user = userService.randomSelectUser();
-            UserDTO userDTO = new UserDTO(user.getId(), user.getUsername(), user.getEmail());
-
-            // PostDTO 생성
-            PostDTO postDTO = new PostDTO();
-            postDTO.setTitle(faker.lorem().sentence());
-            postDTO.setContent(faker.lorem().sentence(10)); // 10개의 단어로 구성된 문장 생성
-//            postDTO.setContent(faker.lorem().paragraph());
-            postDTO.setAuthor(userDTO); // 게시글 작성자 설정
-
-
-            // createPost 메서드 호출
-            createPost(postDTO);
-
-        }
+    // Service 계층
+    public Page<PostDTO> getPostsByPagination(Pageable pageable) {
+        Page<Post> posts = postRepository.findAll(pageable);
+        return posts.map(post -> convertToDTO(post, post.getUser()));
     }
+
 
     @Transactional
     public void createDummyPostByEM(int count) {

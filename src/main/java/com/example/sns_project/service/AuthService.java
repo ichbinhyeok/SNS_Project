@@ -34,16 +34,14 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest loginRequest) {
-        Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                String token = jwtUtil.generateToken(user.getUsername());
-                return new AuthResponse(token, "로그인 성공");
-            }
+        if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            String token = jwtUtil.generateToken(user);  // user 객체 전체를 전달
+            return new AuthResponse(token, "로그인 성공");
         }
-        throw new RuntimeException("Invalid credentials");
+        throw new RuntimeException("Invalid data");
     }
 
     public UserDTO register(UserRegistrationDTO userRegistrationDTO) {

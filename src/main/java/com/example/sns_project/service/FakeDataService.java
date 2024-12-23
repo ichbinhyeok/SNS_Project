@@ -185,9 +185,8 @@ public class FakeDataService {
             Post post = posts.get(faker.number().numberBetween(0, posts.size()));
             User user = users.get(faker.number().numberBetween(0, users.size()));
 
-            List<User> possibleReplyUsers = users.stream()
-                    .filter(u -> !u.equals(user))
-                    .collect(Collectors.toList());
+            // 본인을 제외하지 않고 모든 사용자 포함
+            List<User> possibleReplyUsers = new ArrayList<>(users);
 
             Comment rootComment = createCommentWithNotification(
                     post,
@@ -233,6 +232,7 @@ public class FakeDataService {
             return null;
         }
 
+        // 본인을 포함한 랜덤 사용자 선택
         User user = (parentComment == null) ? originalUser :
                 possibleUsers.get(ThreadLocalRandom.current().nextInt(possibleUsers.size()));
 
@@ -276,6 +276,7 @@ public class FakeDataService {
 
         return comment;
     }
+
 
     /**
      * 게시글 좋아요 더미 데이터 생성

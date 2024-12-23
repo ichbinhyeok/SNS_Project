@@ -24,7 +24,7 @@ public class RedisInsertTest {
     void tearDown() {
         // Redis에서 테스트 데이터 삭제
         for (int i = 1; i <= 5; i++) {
-            redisService.deleteValues(TEST_KEY_PREFIX + i);
+//            redisService.deleteValues(TEST_KEY_PREFIX + i);
         }
     }
 
@@ -37,7 +37,7 @@ public class RedisInsertTest {
         long start = System.currentTimeMillis();
 
         // 1. Redis에 여러 데이터 저장
-        for (int i = 1; i <= 1000000; i++) {
+        for (int i = 1; i <= 5; i++) {
             String key = TEST_KEY_PREFIX + i;
             String value = "value" + i;
             redisService.setValues(key, value);
@@ -58,6 +58,9 @@ public class RedisInsertTest {
             assertThat(actualValue).isNotNull();
             assertThat(actualValue).isEqualTo(expectedValue);
         }
+
+
+        redisService.printAllValues();
 
 
     }

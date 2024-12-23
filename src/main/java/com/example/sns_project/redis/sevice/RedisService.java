@@ -93,4 +93,15 @@ public class RedisService {
         redisTemplate.delete(key);
     }
 
+    // 레디스에 저장되어있는 모든 내역 출력
+    public void printAllValues() {
+        Set<String> keys = redisTemplate.keys("*");
+        if (keys != null) {
+            keys.forEach(key -> {
+                String value = redisTemplate.opsForValue().get(key);
+                System.out.println(key + ": " + value);
+            });
+        }
+    }
+
 }

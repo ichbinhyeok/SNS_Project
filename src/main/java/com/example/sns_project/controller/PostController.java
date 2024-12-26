@@ -89,21 +89,22 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     @Operation(summary = "게시글 목록 조회", description = "모든 게시글을 조회합니다.")
     public ResponseEntity<List<PostDTO>> getAllPosts() {
         List<PostDTO> posts = postService.getAllPosts();
         return ResponseEntity.ok(posts);
     }
 
-    @GetMapping
+    @GetMapping("/paged")
     @Operation(summary = "게시글 목록 페이징 조회", description = "페이지 단위로 게시글을 조회합니다.")
     public ResponseEntity<Page<PostDTO>> getPostsByPagination(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id,desc") String[] sort) {
+            @RequestParam(defaultValue = "DESC") String direction) {
 
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(getSortOrder(sort)));
+        Sort sort = Sort.by(Sort.Direction.valueOf(direction.toUpperCase()), "createdDate");
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
         Page<PostDTO> posts = postService.getPostsByPagination(pageRequest);
         return ResponseEntity.ok(posts);
     }

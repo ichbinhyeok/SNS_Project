@@ -4,6 +4,7 @@ import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.NotificationType;
+import com.example.sns_project.exception.AlreadyLikedException;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.model.*;
 import com.example.sns_project.repository.CommentRepository;
@@ -101,7 +102,7 @@ public class PostService {
     public void likePost(Long postId, Long userId) {
         // 이미 좋아요 했는지 확인
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
-            throw new IllegalStateException("이미 좋아요를 누른 게시물입니다.");
+            throw new AlreadyLikedException("이미 좋아요를 누른 게시물입니다.");
         }
 
         Post post = postRepository.findById(postId)

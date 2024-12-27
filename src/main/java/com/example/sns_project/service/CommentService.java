@@ -1,6 +1,7 @@
 package com.example.sns_project.service;
 
 import com.example.sns_project.dto.CommentDTO;
+import com.example.sns_project.exception.AlreadyLikedException;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.exception.UnauthorizedException;
 import com.example.sns_project.model.Comment;
@@ -114,15 +115,15 @@ public class CommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // 자신의 댓글에 좋아요 방지
-        if (comment.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("You cannot like your own comment");
-        }
+//        // 자신의 댓글에 좋아요 방지
+//        if (comment.getUser().getId().equals(userId)) {
+//            throw new IllegalStateException("You cannot like your own comment");
+//        }
 
         // 중복 좋아요 체크
         if (comment.getLikes().stream()
                 .anyMatch(like -> like.getUser().getId().equals(userId))) {
-            throw new IllegalStateException("Already liked this comment");
+            throw new AlreadyLikedException("Already liked this comment");
         }
 
         CommentLike commentLike = new CommentLike();

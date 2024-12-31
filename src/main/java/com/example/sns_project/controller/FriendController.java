@@ -1,5 +1,6 @@
 package com.example.sns_project.controller;
 
+import com.example.sns_project.dto.FriendRequestDTO;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.RequestStatus;
 import com.example.sns_project.model.FriendRequest;
@@ -61,9 +62,9 @@ public class FriendController {
 
     @GetMapping("/my-requests")
     @Operation(summary = "내 친구 요청 목록 조회", description = "현재 사용자의 친구 요청 목록을 조회합니다.")
-    public ResponseEntity<List<FriendRequest>> getMyFriendRequests(HttpServletRequest request) {
+    public ResponseEntity<List<FriendRequestDTO>> getMyFriendRequests(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        List<FriendRequest> requests = friendService.getFriendRequests(userId);
+        List<FriendRequestDTO> requests = friendService.getFriendRequests(userId);
         return ResponseEntity.ok(requests);
     }
 

@@ -1,9 +1,12 @@
 package com.example.sns_project.service;
 
+import com.example.sns_project.dto.FriendRequestDTO;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.RequestStatus;
 import com.example.sns_project.exception.ResourceNotFoundException;
 import com.example.sns_project.exception.UnauthorizedException;
+import com.example.sns_project.exception.DuplicateRequestException;
+import com.example.sns_project.exception.InvalidRequestStateException;
 import com.example.sns_project.model.FriendRequest;
 import com.example.sns_project.model.Friendship;
 import com.example.sns_project.model.User;
@@ -11,11 +14,14 @@ import com.example.sns_project.repository.FriendRequestRepository;
 import com.example.sns_project.repository.FriendshipRepository;
 import com.example.sns_project.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @AllArgsConstructor
 public class FriendService {
@@ -37,12 +43,12 @@ public class FriendService {
 
         // 이미 친구인지 확인
         if (friendshipRepository.existsFriendship(senderId, receiverId)) {
-            throw new IllegalStateException("Already friends");
+            throw new DuplicateRequestException("Already friends");
         }
 
         // 중복 요청인지 확인
         if (friendRequestRepository.existsBySenderAndReceiverAndStatus(sender, receiver, RequestStatus.PENDING)) {
-            throw new IllegalStateException("Friend request already sent");
+            throw new DuplicateRequestException("Friend request already sent");
         }
 
         FriendRequest friendRequest = new FriendRequest();
@@ -66,12 +72,12 @@ public class FriendService {
 
         // 올바른 요청 상태인지 확인
         if (friendRequest.getStatus() != RequestStatus.PENDING) {
-            throw new IllegalStateException("Request already " + friendRequest.getStatus().toString().toLowerCase());
+            throw new InvalidRequestStateException("Request already " + friendRequest.getStatus().toString().toLowerCase());
         }
 
         // 이미 친구 관계인지 확인
         if (friendshipRepository.existsFriendship(friendRequest.getSender().getId(), friendRequest.getReceiver().getId())) {
-            throw new IllegalStateException("Friendship already exists");
+            throw new DuplicateRequestException("Friendship already exists");
         }
 
         Friendship friendship = new Friendship();
@@ -95,7 +101,7 @@ public class FriendService {
         }
 
         if (request.getStatus() != RequestStatus.PENDING) {
-            throw new IllegalStateException("Request already processed");
+            throw new InvalidRequestStateException("Request already processed");
         }
 
         request.setStatus(RequestStatus.REJECTED);
@@ -108,10 +114,20 @@ public class FriendService {
         return friendshipRepository.findFriendsByUserId(userId);
     }
 
-    public List<FriendRequest> getFriendRequests(Long userId) {
+    public List<FriendRequestDTO> getFriendRequests(Long userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return friendRequestRepository.findByReceiverId(userId);
+
+        return friendRequestRepository.findByReceiverId(userId).stream()
+                .map(request -> {
+                    FriendRequestDTO dto = new FriendRequestDTO();
+                    dto.setId(request.getId());
+                    dto.setSenderId(request.getSender().getId());
+                    dto.setSenderUsername(request.getSender().getUsername());
+                    dto.setStatus(request.getStatus());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -142,8 +158,11 @@ public class FriendService {
     }
 
     public List<User> recommendFriends(Long userId) {
-        userRepository.findById(userId)
+        // 사용자 존재 확인
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return userRepository.findNonFriendsByUserId(userId);
+
+        // 공통 친구 수 기반으로 추천 (최대 10명)
+        return userRepository.findRecommendedUsers(userId, PageRequest.of(0, 10));
     }
 }

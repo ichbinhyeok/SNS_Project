@@ -30,7 +30,7 @@ public class FakeDataController {
             @RequestParam(name = "userCount", defaultValue = "100")
             @Parameter(description = "생성할 사용자 수") int userCount,
 
-            @RequestParam(name = "friendshipRatio", defaultValue = "0.2")
+            @RequestParam(name = "friendshipRatio", defaultValue = "0.1")
             @Parameter(description = "사용자당 친구 관계 비율 (0.0 ~ 1.0)") double friendshipRatio,
 
             @RequestParam(name = "friendRequestsPerUser", defaultValue = "5")

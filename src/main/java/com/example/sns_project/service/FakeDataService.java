@@ -42,6 +42,8 @@ public class FakeDataService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final Faker faker;
 
+    private final Random random = new Random();
+
     /**
      * 생성자를 통한 의존성 주입
      */
@@ -59,6 +61,7 @@ public class FakeDataService {
             AuthService authService,
             NotificationRepository notificationRepository,
             NotificationService notificationService
+
     ) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
@@ -286,7 +289,7 @@ public class FakeDataService {
      */
     @Transactional
     public void generatePostLikes(double likeRatio, boolean withNotifications) {
-        int pageSize = 100000;
+        int pageSize = 1000;
         int pageNumber = 0;
         int processedCount = 0;
         List<User> allUsers = userRepository.findAll();
@@ -303,7 +306,7 @@ public class FakeDataService {
                         .map(like -> like.getUser().getId())
                         .collect(Collectors.toSet());
 
-                int numberOfLikes = (int) (allUsers.size() * likeRatio);
+                int numberOfLikes = (int) (allUsers.size() * random.nextDouble()* likeRatio);
                 List<User> shuffledUsers = new ArrayList<>(allUsers);
                 Collections.shuffle(shuffledUsers);
 
@@ -361,7 +364,7 @@ public class FakeDataService {
                         .map(like -> like.getUser().getId())
                         .collect(Collectors.toSet());
 
-                int numberOfLikes = (int) (allUsers.size() * likeRatio);
+                int numberOfLikes = (int) (allUsers.size() * random.nextDouble()*likeRatio);
                 List<User> shuffledUsers = new ArrayList<>(allUsers);
                 Collections.shuffle(shuffledUsers);
 
@@ -414,7 +417,7 @@ public class FakeDataService {
                 ));
 
         for (User user : allUsers) {
-            int numberOfFriends = (int) ((allUsers.size() - 1) * friendshipRatio);
+            int numberOfFriends = (int) ((allUsers.size() - 1) * random.nextDouble()*friendshipRatio);
             List<User> potentialFriends = allUsers.stream()
                     .filter(u -> !u.equals(user))
                     .collect(Collectors.toList());

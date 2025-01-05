@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -149,6 +151,11 @@ public class FakeDataService {
         List<User> users = userRepository.findAll();
         List<Post> postsToSave = new ArrayList<>();
 
+        // 3개월 전부터 현재까지의 기간 설정
+        LocalDateTime startDate = LocalDateTime.now().minusMonths(3);
+        LocalDateTime endDate = LocalDateTime.now();
+        long totalSeconds = ChronoUnit.SECONDS.between(startDate, endDate);
+
         for (int i = 0; i < numberOfPosts; i++) {
             User user = users.get(ThreadLocalRandom.current().nextInt(users.size()));
 
@@ -156,6 +163,12 @@ public class FakeDataService {
             post.setTitle(faker.lorem().sentence());
             post.setContent(faker.lorem().paragraph(3));
             post.setUser(user);
+
+            // 랜덤한 생성 시간 설정
+            LocalDateTime randomCreatedDate = startDate.plusSeconds(
+                    ThreadLocalRandom.current().nextLong(totalSeconds)
+            );
+            post.setCreatedDate(randomCreatedDate);
 
             postsToSave.add(post);
 
@@ -219,9 +232,6 @@ public class FakeDataService {
         }
     }
 
-    /**
-     * 댓글과 대댓글을 재귀적으로 생성
-     */
     private Comment createCommentWithNotification(
             Post post,
             User originalUser,
@@ -235,7 +245,6 @@ public class FakeDataService {
             return null;
         }
 
-        // 본인을 포함한 랜덤 사용자 선택
         User user = (parentComment == null) ? originalUser :
                 possibleUsers.get(ThreadLocalRandom.current().nextInt(possibleUsers.size()));
 
@@ -244,6 +253,21 @@ public class FakeDataService {
         comment.setUser(user);
         comment.setContent(faker.lorem().sentence());
         comment.setParentComment(parentComment);
+
+        // 시간 설정 로직
+        LocalDateTime minPossibleTime = post.getCreatedDate(); // 게시글 생성 시간
+        LocalDateTime maxPossibleTime = LocalDateTime.now();
+
+        if (parentComment != null) {
+            // 대댓글인 경우 부모 댓글 이후 시간으로 설정
+            minPossibleTime = parentComment.getCreatedDate();
+        }
+
+        long secondsBetween = ChronoUnit.SECONDS.between(minPossibleTime, maxPossibleTime);
+        LocalDateTime randomCommentDate = minPossibleTime.plusSeconds(
+                ThreadLocalRandom.current().nextLong(secondsBetween + 1)
+        );
+        comment.setCreatedDate(randomCommentDate);
 
         // 알림 생성 로직
         if (withNotifications) {
@@ -260,12 +284,13 @@ public class FakeDataService {
             }
         }
 
+        // 대댓글 생성 로직 - 현재 댓글 시간 이후로만 생성되도록
         int numberOfReplies = ThreadLocalRandom.current().nextInt(6);
         for (int i = 0; i < numberOfReplies; i++) {
             Comment childComment = createCommentWithNotification(
                     post,
                     originalUser,
-                    comment,
+                    comment,  // 현재 댓글이 부모가 됨
                     possibleUsers,
                     maxDepth,
                     currentDepth + 1,
@@ -279,7 +304,6 @@ public class FakeDataService {
 
         return comment;
     }
-
 
     /**
      * 게시글 좋아요 더미 데이터 생성
@@ -302,11 +326,17 @@ public class FakeDataService {
             List<Post> allPosts = postRepository.findAllWithLikesByIds(postIds);
 
             for (Post post : allPosts) {
+
+                // 포스트 생성 시간부터 현재까지만 좋아요 생성 가능
+                LocalDateTime minPossibleTime = post.getCreatedDate();
+                LocalDateTime maxPossibleTime = LocalDateTime.now();
+                long secondsBetween = ChronoUnit.SECONDS.between(minPossibleTime, maxPossibleTime);
+
                 Set<Long> existingLikes = post.getLikes().stream()
                         .map(like -> like.getUser().getId())
                         .collect(Collectors.toSet());
 
-                int numberOfLikes = (int) (allUsers.size() * random.nextDouble()* likeRatio);
+                int numberOfLikes = (int) (allUsers.size() * random.nextDouble() * likeRatio);
                 List<User> shuffledUsers = new ArrayList<>(allUsers);
                 Collections.shuffle(shuffledUsers);
 
@@ -316,6 +346,15 @@ public class FakeDataService {
                         PostLike postLike = new PostLike();
                         postLike.setPost(post);
                         postLike.setUser(user);
+
+                        // 포스트 생성 시간 이후의 랜덤한 시간 설정
+                        LocalDateTime randomLikeDate = minPossibleTime.plusSeconds(
+                                ThreadLocalRandom.current().nextLong(secondsBetween)
+                        );
+
+                        postLike.setCreatedDate(randomLikeDate);
+
+
                         entityManager.persist(postLike);
 
                         if (withNotifications) {
@@ -360,11 +399,18 @@ public class FakeDataService {
             List<Comment> allComments = commentRepository.findAllWithLikesByIds(commentIds);
 
             for (Comment comment : allComments) {
+
+                // 댓글 생성 시간부터 현재까지만 좋아요 생성 가능
+                LocalDateTime minPossibleTime = comment.getCreatedDate();
+                LocalDateTime maxPossibleTime = LocalDateTime.now();
+                long secondsBetween = ChronoUnit.SECONDS.between(minPossibleTime, maxPossibleTime);
+
+
                 Set<Long> existingLikes = comment.getLikes().stream()
                         .map(like -> like.getUser().getId())
                         .collect(Collectors.toSet());
 
-                int numberOfLikes = (int) (allUsers.size() * random.nextDouble()*likeRatio);
+                int numberOfLikes = (int) (allUsers.size() * random.nextDouble() * likeRatio);
                 List<User> shuffledUsers = new ArrayList<>(allUsers);
                 Collections.shuffle(shuffledUsers);
 
@@ -374,6 +420,14 @@ public class FakeDataService {
                         CommentLike commentLike = new CommentLike();
                         commentLike.setComment(comment);
                         commentLike.setUser(user);
+
+                        // 댓글 생성 시간 이후의 랜덤한 시간 설정
+                        LocalDateTime randomLikeDate = minPossibleTime.plusSeconds(
+                                ThreadLocalRandom.current().nextLong(secondsBetween)
+                        );
+                        commentLike.setCreatedDate(randomLikeDate);
+
+
                         entityManager.persist(commentLike);
 
                         if (withNotifications) {
@@ -417,7 +471,7 @@ public class FakeDataService {
                 ));
 
         for (User user : allUsers) {
-            int numberOfFriends = (int) ((allUsers.size() - 1) * random.nextDouble()*friendshipRatio);
+            int numberOfFriends = (int) ((allUsers.size() - 1) * random.nextDouble() * friendshipRatio);
             List<User> potentialFriends = allUsers.stream()
                     .filter(u -> !u.equals(user))
                     .collect(Collectors.toList());

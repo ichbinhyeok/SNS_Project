@@ -22,7 +22,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # or create, create-drop, validate
+      ddl-auto: create  # or create, create-drop, validate
 #    show-sql: true
     properties:
       hibernate:

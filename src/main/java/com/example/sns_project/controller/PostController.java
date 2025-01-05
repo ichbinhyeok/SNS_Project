@@ -6,11 +6,15 @@ import com.example.sns_project.exception.ForbiddenException;
 import com.example.sns_project.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -137,8 +141,33 @@ public class PostController {
         return ResponseEntity.ok(comments);
     }
 
+    /**
+     * 전체 인기 게시물 조회 API
+     */
+    @GetMapping("/popular")
+    @Operation(summary = "인기 게시글 조회", description = "좋아요 수와 댓글 수를 기반으로 인기 게시글을 조회합니다.")
+    @Parameters({
+            @Parameter(name = "page", description = "페이지 번호 (0부터 시작)", schema = @Schema(type = "integer", defaultValue = "0")),
+            @Parameter(name = "size", description = "페이지 크기", schema = @Schema(type = "integer", defaultValue = "10")),
+            @Parameter(name = "sort", description = "정렬 기준 (예: id,desc / createdDate,asc)",
+                    schema = @Schema(type = "string", defaultValue = "id,desc"))
+    })
+    public ResponseEntity<Page<PostDTO>> getPopularPosts(
+            @PageableDefault(page = 0, size = 10)
+            Pageable pageable) {
+        return ResponseEntity.ok(postService.getPopularPosts(pageable));
+    }
 
-
+    /**
+     * 실시간 인기 게시물 조회 API
+     */
+    @GetMapping("/hot")
+    @Operation(summary = "실시간 인기 게시글 조회", description = "최근 24시간 동안의 활동(좋아요, 댓글)을 기준으로 인기 게시글을 조회합니다.")
+    public ResponseEntity<List<PostDTO>> getHotPosts(
+            @Parameter(description = "조회할 게시글 수 (기본값: 10)")
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(postService.getHotPosts(limit));
+    }
 
 //    @PostMapping("/{postId}/comments")
 //    @Operation(summary = "댓글 추가", description = "특정 게시글에 댓글을 추가합니다.")
@@ -152,10 +181,6 @@ public class PostController {
 
 
 
-    @PostMapping("/generate-DummyPostsByEM")
-    public ResponseEntity<String> createDummyPostByEM(@RequestParam int count) {
-        postService.createDummyPostByEM(count);
-        return ResponseEntity.ok("Dummy posts created: " + count);
-    }
+
 
 }

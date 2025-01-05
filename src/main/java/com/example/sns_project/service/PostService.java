@@ -17,9 +17,11 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -135,28 +137,6 @@ public class PostService {
         postRepository.save(post);
     }
 
-    // 현재 구현된 기능: 게시물에 댓글 추가
-    // 날짜1205필요없는 기능 CommentService에서 구현함
-    @Transactional
-    public CommentDTO addComment(Long postId, Long userId, String content) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
-        User user = userService.findById(userId);
-
-        Comment comment = new Comment();
-        comment.setContent(content);
-        comment.setPost(post);
-        comment.setUser(user);
-        post.getComments().add(comment); // 게시글의 댓글 목록에 추가
-        user.getComments().add(comment); // 사용자의 댓글 목록에 추가
-        postRepository.save(post); // 게시글에 변경사항 저장
-
-        // 알림 생성
-        notificationService.sendPostCommentNotification(post.getUser().getId(), user.getUsername());
-
-        // CommentDTO로 변환하여 반환
-        return new CommentDTO(comment.getId(), postId, comment.getContent(), user.getId());
-    }
 
     // DTO 변환 헬퍼 메서드
     private PostDTO convertToDTO(Post post, User user) {
@@ -165,7 +145,8 @@ public class PostService {
                 post.getTitle(),
                 post.getContent(),
                 new UserDTO(user.getId(), user.getUsername(), user.getEmail()),
-                null
+                post.getLikes().stream()
+                        .map(postLike -> postLike.getUser().getId())                         .collect(Collectors.toSet())
         );
     }
 
@@ -178,52 +159,49 @@ public class PostService {
                 .toList();
     }
 
-    // Service 계층
+    // 게시물 페이징
     public Page<PostDTO> getPostsByPagination(Pageable pageable) {
         Page<Post> posts = postRepository.findAll(pageable);
         return posts.map(post -> convertToDTO(post, post.getUser()));
     }
 
-
+    /**
+     * 인기 게시물을 조회하는 메서드
+     * 좋아요 수와 댓글 수를 기반으로 인기도를 계산합니다.
+     */
     @Transactional
-    public void createDummyPostByEM(int count) {
-        Faker faker = new Faker(); // Faker 인스턴스는 루프 밖에서 생성
-        int batchSize = 1000; // 배치 크기 설정
-        List<User> cachedUsers = userRepository.findAll(); // 모든 사용자 리스트를 한 번에 가져오기
-        Random random = new Random(); // 랜덤 객체 생성
-
-        for (int i = 0; i < count; i++) {
-//            // 랜덤 사용자 선택
-//            User user = userService.randomSelectUser();
-            // 캐싱된 유저 리스트에서 랜덤으로 사용자 선택
-            User user = cachedUsers.get(random.nextInt(cachedUsers.size()));
-            UserDTO userDTO = new UserDTO(user.getId(), user.getUsername(), user.getEmail());
-
-            // PostDTO 생성
-            PostDTO postDTO = new PostDTO();
-            postDTO.setTitle(faker.lorem().sentence());
-            postDTO.setContent(faker.lorem().sentence(10)); // 10개의 단어로 구성된 문장 생성
-            postDTO.setAuthor(userDTO); // 게시글 작성자 설정
-
-            // createPost 메서드 호출 (Post 엔티티로 변환 후 persist)
-            Post post = new Post();
-            post.setTitle(postDTO.getTitle());
-            post.setContent(postDTO.getContent());
-            post.setUser(user); // User 엔티티를 직접 설정
-
-            entityManager.persist(post); // 엔티티 매니저에 게시글 추가
-
-            // 일정 수마다 flush 및 clear
-            if (i % batchSize == 0 && i > 0) {
-                entityManager.flush(); // 데이터베이스에 반영
-                entityManager.clear(); // 영속성 컨텍스트 비우기
-            }
-        }
-        entityManager.flush(); // 남은 데이터 flush
-        entityManager.clear(); // 마지막으로 영속성 컨텍스트 비우기
+    public Page<PostDTO> getPopularPosts(Pageable pageable) {
+        Page<Post> posts = postRepository.findPopularPosts(pageable);
+        return posts.map(post -> {
+            PostDTO dto = convertToDTO(post, post.getUser());
+            dto.setLikedBy(post.getLikes().stream()
+                    .map(like -> like.getUser().getId())
+                    .collect(Collectors.toSet()));
+            return dto;
+        });
     }
 
 
+    /**
+     * 실시간 인기 게시물 조회 메서드
+     * 최근 24시간 동안의 활동을 기준으로 합니다.
+     */
+    @Transactional
+    public List<PostDTO> getHotPosts(int limit) {
+        LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
+
+        List<Post> hotPosts = postRepository.findHotPosts(oneDayAgo, PageRequest.of(0, limit));
+
+        return hotPosts.stream()
+                .map(post -> {
+                    PostDTO dto = convertToDTO(post, post.getUser());
+                    dto.setLikedBy(post.getLikes().stream()
+                            .map(like -> like.getUser().getId())
+                            .collect(Collectors.toSet()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 
     // 앞으로 구현될 기능: 게시물 검색 기능
     public List<PostDTO> searchPosts(String keyword) {

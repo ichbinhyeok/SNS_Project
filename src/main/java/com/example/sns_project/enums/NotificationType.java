@@ -6,5 +6,5 @@ public enum NotificationType {
     COMMENT,            // 댓글
     FRIEND_REQUEST,     // 친구 요청
     MESSAGE,            // 메시지
-    DEFAULT;            // 기본 알림
+    DEFAULT, EVENT;            // 기본 알림
 }

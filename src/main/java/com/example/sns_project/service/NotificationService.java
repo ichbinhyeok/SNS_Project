@@ -1,6 +1,7 @@
 package com.example.sns_project.service;
 
 // 알림 관련 비즈니스 로직을 처리하는 서비스
+
 import com.example.sns_project.dto.NotificationDTO;
 import com.example.sns_project.exception.ResourceNotFoundException; // 사용자 정의 예외 추가
 import com.example.sns_project.exception.UnauthorizedException;
@@ -10,8 +11,12 @@ import com.example.sns_project.model.User;
 import com.example.sns_project.repository.NotificationRepository;
 import com.example.sns_project.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,8 +24,19 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class NotificationService {
 
+    private static final int BATCH_SIZE = 5000;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final List<Notification> notificationBuffer = new ArrayList<>();
+
+    // 배치 처리를 위한 버퍼 플러시 메서드
+    private synchronized void flushNotificationBuffer() {
+        if (!notificationBuffer.isEmpty()) {
+            notificationRepository.saveAll(notificationBuffer);
+            notificationBuffer.clear();
+        }
+    }
+
 
     // 특정 사용자의 모든 알림을 조회
     public List<NotificationDTO> getUserNotifications(Long userId) {
@@ -32,6 +48,19 @@ public class NotificationService {
                         notification.getUser().getId(),
                         notification.isRead()))
                 .collect(Collectors.toList());
+    }
+
+    // 모든 알림 읽음 처리
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        List<Notification> unreadNotifications = notificationRepository.findByUserIdAndIsRead(userId, false);
+        unreadNotifications.forEach(notification -> notification.setRead(true));
+        notificationRepository.saveAll(unreadNotifications);
+    }
+
+    // 읽지 않은 알림 개수 조회
+    public Long getUnreadNotificationCount(Long userId) {
+        return notificationRepository.countByUserIdAndIsRead(userId, false);
     }
 
     // 특정 알림을 읽음으로 마킹 (권한 검증 추가)
@@ -73,7 +102,7 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    // 알림 전송 메서드들은 그대로 유지 (내부적으로 사용되므로 권한 검증 불필요)
+    // 기본 알림 전송 메서드 (배치 처리)
     public void sendNotification(Long userId, String message, NotificationType notificationType) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -82,7 +111,50 @@ public class NotificationService {
         notification.setUser(user);
         notification.setMessage(message);
         notification.setNotificationType(notificationType);
-        notificationRepository.save(notification);
+
+        synchronized (notificationBuffer) {
+            notificationBuffer.add(notification);
+            if (notificationBuffer.size() >= BATCH_SIZE) {
+                flushNotificationBuffer();
+            }
+        }
+    }
+
+    // 남은 알림들 강제 저장
+    public void flushRemainingNotifications() {
+        flushNotificationBuffer();
+    }
+
+
+    // 전체 사용자에게 이벤트 알림 전송
+    @Transactional
+    public void sendEventNotificationToAll(String eventMessage) {
+        int page = 0;
+        int size = 1000; // 한 번에 조회할 사용자 수
+        Page<User> userPage;
+
+        do {
+            userPage = userRepository.findAll(PageRequest.of(page, size));
+
+            for (User user : userPage.getContent()) {
+                Notification notification = new Notification();
+                notification.setUser(user);
+                notification.setMessage(eventMessage);
+                notification.setNotificationType(NotificationType.EVENT);
+
+                synchronized(notificationBuffer) {
+                    notificationBuffer.add(notification);
+                    if (notificationBuffer.size() >= BATCH_SIZE) {
+                        flushNotificationBuffer();
+                    }
+                }
+            }
+
+            page++;
+        } while (userPage.hasNext());
+
+        // 남은 알림들 처리
+        flushNotificationBuffer();
     }
 
     // 이하 다른 알림 전송 메서드들은 동일하게 유지
@@ -114,5 +186,16 @@ public class NotificationService {
     public void sendFriendAddedNotification(Long userId, Long friendId) {
         String message = "사용자 " + friendId + "님과 친구가 되었습니다.";
         sendNotification(userId, message, NotificationType.DEFAULT);
+    }
+
+    // 이벤트 알림 예시 메서드들
+    public void sendNewFeatureEventNotification(String featureName) {
+        String message = "새로운 기능이 추가되었습니다: " + featureName;
+        sendEventNotificationToAll(message);
+    }
+
+    public void sendMaintenanceEventNotification(String maintenanceTime) {
+        String message = "서버 점검 안내: " + maintenanceTime;
+        sendEventNotificationToAll(message);
     }
 }

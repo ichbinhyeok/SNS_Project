@@ -49,7 +49,15 @@ public class FakeDataController {
             @Parameter(description = "좋아요 비율 (0.0 ~ 1.0)") double likeRatio,
 
             @RequestParam(name = "withNotifications", defaultValue = "false")
-            @Parameter(description = "알림 데이터 생성 여부") boolean withNotifications
+            @Parameter(description = "알림 데이터 생성 여부") boolean withNotifications,
+
+            @RequestParam(name = "minReplies", defaultValue = "0")
+            @Parameter(description = "대댓글 최소 개수") int minReplies,
+
+            @RequestParam(name = "maxReplies", defaultValue = "2")
+            @Parameter(description = "대댓글 최대 개수") int maxReplies
+
+
     ) {
         Map<String, Object> statistics = new HashMap<>();
         long totalStartTime = System.currentTimeMillis();
@@ -100,7 +108,7 @@ public class FakeDataController {
             int totalComments = totalPosts * commentsPerPost;
             log.info("[5/7] 댓글 생성 시작 - 총 댓글 수: {}", totalComments);
             long commentStartTime = System.currentTimeMillis();
-            fakeDataService.generateComments(totalComments, maxDepth, withNotifications);
+            fakeDataService.generateComments(totalComments, maxDepth, withNotifications, minReplies, maxReplies);
             statistics.put("commentGenerationTime", System.currentTimeMillis() - commentStartTime);
             log.info("댓글 생성 완료");
 
@@ -199,14 +207,20 @@ public class FakeDataController {
             @Parameter(description = "댓글 최대 깊이") int maxDepth,
 
             @RequestParam(name = "withNotifications", defaultValue = "false")
-            @Parameter(description = "알림 데이터 생성 여부") boolean withNotifications
+            @Parameter(description = "알림 데이터 생성 여부") boolean withNotifications,
+
+            @RequestParam(name = "minReplies", defaultValue = "0")
+            @Parameter(description = "대댓글 최소 개수") int minReplies,
+
+            @RequestParam(name = "maxReplies", defaultValue = "2")
+            @Parameter(description = "대댓글 최대 개수") int maxReplies
     ) {
         try {
             log.info("댓글 생성 시작. 생성할 댓글 수: {}, 최대 깊이: {}, 알림 생성: {}",
                     count, maxDepth, withNotifications);
             long startTime = System.currentTimeMillis();
 
-            fakeDataService.generateComments(count, maxDepth, withNotifications);
+            fakeDataService.generateComments(count, maxDepth, withNotifications, minReplies, maxReplies);
 
             Map<String, Object> result = new HashMap<>();
             result.put("generatedComments", count);

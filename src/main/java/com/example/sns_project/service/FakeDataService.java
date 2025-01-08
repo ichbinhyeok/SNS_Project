@@ -191,7 +191,11 @@ public class FakeDataService {
      * @param withNotifications 알림 생성 여부
      */
     @Transactional
-    public void generateComments(int numberOfComments, int maxDepth, boolean withNotifications) {
+    public void generateComments(int numberOfComments,
+                                 int maxDepth,
+                                 boolean withNotifications,
+                                 int minReplies,
+                                 int maxReplies) {
         List<Post> posts = postRepository.findAll();
         List<User> users = userRepository.findAll();
         List<Comment> commentsToSave = new ArrayList<>();
@@ -211,7 +215,9 @@ public class FakeDataService {
                     possibleReplyUsers,
                     maxDepth,
                     0,
-                    withNotifications
+                    withNotifications,
+                    minReplies,
+                    maxReplies
             );
 
             if (rootComment != null) {
@@ -239,7 +245,9 @@ public class FakeDataService {
             List<User> possibleUsers,
             int maxDepth,
             int currentDepth,
-            boolean withNotifications
+            boolean withNotifications,
+            int minReplies,    // 추가
+            int maxReplies
     ) {
         if (currentDepth > maxDepth) {
             return null;
@@ -253,6 +261,7 @@ public class FakeDataService {
         comment.setUser(user);
         comment.setContent(faker.lorem().sentence());
         comment.setParentComment(parentComment);
+        comment.setDepth(currentDepth);  // depth 설정 추가
 
         // 시간 설정 로직
         LocalDateTime minPossibleTime = post.getCreatedDate(); // 게시글 생성 시간
@@ -285,16 +294,20 @@ public class FakeDataService {
         }
 
         // 대댓글 생성 로직 - 현재 댓글 시간 이후로만 생성되도록
-        int numberOfReplies = ThreadLocalRandom.current().nextInt(6);
+        int numberOfReplies = currentDepth < maxDepth ?
+                ThreadLocalRandom.current().nextInt(minReplies, maxReplies + 1) : 0;
+
         for (int i = 0; i < numberOfReplies; i++) {
             Comment childComment = createCommentWithNotification(
                     post,
                     originalUser,
-                    comment,  // 현재 댓글이 부모가 됨
+                    comment,
                     possibleUsers,
                     maxDepth,
                     currentDepth + 1,
-                    withNotifications
+                    withNotifications,
+                    minReplies,
+                    maxReplies
             );
 
             if (childComment != null) {

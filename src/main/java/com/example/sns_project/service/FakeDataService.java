@@ -92,7 +92,7 @@ public class FakeDataService {
         log.info("사용자 더미 데이터 생성 시작. 목표 생성 수: {}", count);
         long startTime = System.currentTimeMillis();
 
-        int batchSize = 500;
+        int batchSize = 10000;
         int processedCount = 0;
         List<String> registeredUsernames = new ArrayList<>();
         Map<String, Object> result = new HashMap<>();
@@ -147,7 +147,7 @@ public class FakeDataService {
      */
     @Transactional
     public void generatePosts(int numberOfPosts) {
-        int batchSize = 5000;
+        int batchSize = 10000;
         List<User> users = userRepository.findAll();
         List<Post> postsToSave = new ArrayList<>();
 
@@ -199,7 +199,7 @@ public class FakeDataService {
         List<Post> posts = postRepository.findAll();
         List<User> users = userRepository.findAll();
         List<Comment> commentsToSave = new ArrayList<>();
-        int batchSize = 5000;
+        int batchSize = 10000;
 
         for (int i = 0; i < numberOfComments; i++) {
             Post post = posts.get(faker.number().numberBetween(0, posts.size()));
@@ -470,7 +470,7 @@ public class FakeDataService {
     @Transactional
     public void generateFriendships(double friendshipRatio, boolean withNotifications) {
         List<User> allUsers = userRepository.findAll();
-        int batchSize = 5000;
+        int batchSize = 10000;
         int processedCount = 0;
         Set<String> existingFriendships = new HashSet<>();
         Map<String, FriendRequest> existingRequests = friendRequestRepository.findAll().stream()
@@ -552,7 +552,7 @@ public class FakeDataService {
     @Transactional
     public void generateFriendRequests(int requestsPerUser) {
         List<User> allUsers = userRepository.findAll();
-        int batchSize = 5000;
+        int batchSize = 10000;
         int processedCount = 0;
 
         Set<String> existingFriendships = friendshipRepository.findAll().stream()

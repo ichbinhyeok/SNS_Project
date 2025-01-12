@@ -94,10 +94,7 @@ public class PostService {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    // 현재 구현된 기능: 게시물에 대한 댓글 조회
-    public List<CommentDTO> getCommentsByPostId(Long postId) {
-        return commentService.getCommentsByPostId(postId);
-    }
+
 
     // 현재 구현된 기능: 게시물 좋아요 기능
     @Transactional

@@ -133,13 +133,13 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{postId}/comments")
-    @Operation(summary = "게시글에 대한 댓글 조회", description = "특정 게시글에 대한 댓글을 조회합니다.")
-    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(
-            @Parameter(description = "게시글 ID") @PathVariable Long postId) {
-        List<CommentDTO> comments = postService.getCommentsByPostId(postId);
-        return ResponseEntity.ok(comments);
-    }
+//    @GetMapping("/{postId}/comments")
+//    @Operation(summary = "게시글에 대한 댓글 조회", description = "특정 게시글에 대한 댓글을 조회합니다.")
+//    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(
+//            @Parameter(description = "게시글 ID") @PathVariable Long postId) {
+//        List<CommentDTO> comments = postService.getCommentsByPostId(postId);
+//        return ResponseEntity.ok(comments);
+//    }
 
     /**
      * 전체 인기 게시물 조회 API

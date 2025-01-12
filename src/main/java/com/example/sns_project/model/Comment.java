@@ -40,4 +40,24 @@ public class Comment extends BaseEntity {
 
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CommentLike> likes = new HashSet<>(); // 댓글의 좋아요 목록
+
+    @Column(nullable = false)
+    private int depth = 0;  // 기본값 0으로 설정
+
+    // 편의 메서드 추가
+    public void addChildComment(Comment child) {
+        childrenComments.add(child);
+        child.setParentComment(this);
+        child.setDepth(this.depth + 1);
+    }
+
+    // 전체 하위 댓글 수를 계산하는 메서드 추가
+    public int calculateTotalReplies() {
+        int total = 0;
+        for (Comment child : childrenComments) {
+            // 직계 자식 댓글 + 각 자식의 하위 댓글 수
+            total += 1 + child.calculateTotalReplies();
+        }
+        return total;
+    }
 }

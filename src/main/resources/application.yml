@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/SNS?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC
+    url: jdbc:mariadb://localhost:3307/SNS?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC
 #    url: jdbc:mariadb://localhost:3306/SNS
     username: root
     password: 1234
@@ -22,7 +22,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create  # or create, create-drop, validate
+      ddl-auto: update  # or create, create-drop, validate
 #    show-sql: true
     properties:
       hibernate:
@@ -34,7 +34,20 @@ spring:
 
   application:
     name: sns_project
+  # Actuator 설정 추가
 
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,metrics,prometheus
+    endpoint:
+      health:
+        show-details: always
+      metrics:
+        enabled: true
+      prometheus:
+        enabled: true
 
   # 레디스 관련
   data:

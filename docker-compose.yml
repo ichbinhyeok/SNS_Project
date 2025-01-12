@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  app:
+    # 기존 app 서비스 설정 유지
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - gradle-cache:/root/.gradle
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    depends_on:
+      - mariadb
+      - redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/SNS?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+
+  mariadb:
+    # 기존 mariadb 서비스 설정 유지
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+    image: mariadb:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    environment:
+      MYSQL_DATABASE: SNS
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3307:3306"
+
+  redis:
+    # 기존 redis 서비스 설정 유지
+    image: redis:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    ports:
+      - "6379:6379"
+
+  # 모니터링을 위한 새로운 서비스들 추가
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8081:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+volumes:
+  gradle-cache:
+  prometheus_data:
+  grafana_data:

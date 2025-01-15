@@ -1,19 +1,10 @@
 spring:
   datasource:
     url: jdbc:mariadb://localhost:3307/SNS?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC
-#    url: jdbc:mariadb://localhost:3306/SNS
     username: root
     password: 1234
     driver-class-name: org.mariadb.jdbc.Driver
 
-  #springdoc:
-#  api-docs:
-#    path: /v3/api-docs
-#  swagger-ui:
-#    path: /swagger-ui.html
-#
-
-  ## 프로젝트 실행할때마다 배치가 자동실행 되는 것을 막음
   batch:
     job:
       enabled: false
@@ -22,38 +13,32 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # or create, create-drop, validate
-#    show-sql: true
+      ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         jdbc:
-          batch_size: 10000  # JPA 배치 사이즈 (배치 처리용)
+          batch_size: 10000
         order_inserts: true
         order_updates: true
 
   application:
     name: sns_project
-  # Actuator 설정 추가
 
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,metrics,prometheus
-    endpoint:
-      health:
-        show-details: always
-      metrics:
-        enabled: true
-      prometheus:
-        enabled: true
-
-  # 레디스 관련
   data:
     redis:
       host: localhost
       port: 6379
+
+# 기본적인 헬스체크와 메트릭만 노출
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  endpoint:
+    health:
+      show-details: always
 
 server:
   port: 8080
@@ -61,9 +46,12 @@ server:
 logging:
   level:
     com.example.sns_project.batch.aspect: INFO
+    # SQL 로깅 추가
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 springdoc:
-  packages-to-scan: com.example.sns_project.controller  # 컨트롤러 패키지 경로 수정
+  packages-to-scan: com.example.sns_project.controller
   default-consumes-media-type: application/json;charset=UTF-8
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
@@ -71,13 +59,3 @@ springdoc:
     disable-swagger-default-url: true
     display-request-duration: true
     operations-sorter: alpha
-
-#    root: INFO
-#    org.hibernate.SQL: DEBUG
-#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
-
-# security:
-#   user:
-#     name: user
-#     password: password

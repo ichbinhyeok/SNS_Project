@@ -48,6 +48,10 @@ services:
     ports:
       - "6379:6379"
 
+    command: redis-server --appendonly yes  # 데이터 지속성을 위한 AOF 설정
+    volumes:
+            - redis-data:/data  # 데이터 영속성을 위한 볼륨 추가
+
   portainer:
     image: portainer/portainer-ce:latest
     volumes:
@@ -60,3 +64,4 @@ services:
 volumes:
   gradle-cache:
   portainer_data:
+  redis-data:

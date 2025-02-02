@@ -15,20 +15,27 @@ import com.github.javafaker.Faker;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
+@Log4j2
 public class PostService {
 
     private final PostRepository postRepository;
@@ -38,20 +45,46 @@ public class PostService {
     private final CommentService commentService;
     private final NotificationService notificationService;
     private final PostLikeRepository postLikeRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String POPULAR_POSTS_KEY = "popular_posts";
+    private static final String POPULAR_POSTS_PATTERN = POPULAR_POSTS_KEY + "*";
 
     @Autowired
     private EntityManager entityManager;
 
+    @Scheduled(cron = "0 0 0 * * *")  // 매일 자정에 실행
+    public void updatePopularPostsCache() {
+        log.info("Updating popular posts cache at midnight");
+
+        try {
+            // 1. 기존 캐시 삭제 시 패턴 사용
+            Set<String> keys = redisTemplate.keys(POPULAR_POSTS_PATTERN);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.info("Deleted {} cached popular posts", keys.size());
+            }
+
+            // 2. 새로운 캐시 생성
+            int[] pageSizes = {10, 20, 30};
+            for (int size : pageSizes) {
+                getPopularPosts(PageRequest.of(0, size));
+            }
+            log.info("Successfully updated popular posts cache");
+        } catch (Exception e) {
+            log.error("Failed to update popular posts cache", e);
+            // 에러 처리 로직 추가 가능
+        }
+    }
 
     // 현재 구현된 기능: 게시물 생성
     @Transactional
-    public PostDTO createPost(PostDTO postDTO, long userId) {  // username 파라미터 추가
+    public PostDTO createPost(PostDTO postDTO, long userId) {
         Post post = new Post();
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
 
-        // username으로 사용자 찾기
-        User user = userService.findById(userId);  // findByUsername 메서드 필요
+        User user = userService.findById(userId);
         post.setUser(user);
         postRepository.save(post);
 
@@ -94,12 +127,9 @@ public class PostService {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-
-
     // 현재 구현된 기능: 게시물 좋아요 기능
     @Transactional
     public void likePost(Long postId, Long userId) {
-        // 이미 좋아요 했는지 확인
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
             throw new AlreadyLikedException("이미 좋아요를 누른 게시물입니다.");
         }
@@ -134,7 +164,6 @@ public class PostService {
         postRepository.save(post);
     }
 
-
     // DTO 변환 헬퍼 메서드
     private PostDTO convertToDTO(Post post, User user) {
         return new PostDTO(
@@ -143,10 +172,9 @@ public class PostService {
                 post.getContent(),
                 new UserDTO(user.getId(), user.getUsername(), user.getEmail()),
                 post.getLikes().stream()
-                        .map(postLike -> postLike.getUser().getId())                         .collect(Collectors.toSet())
+                        .map(postLike -> postLike.getUser().getId()).collect(Collectors.toSet())
         );
     }
-
 
     // 현재 구현된 기능: 모든 게시물 조회
     public List<PostDTO> getAllPosts() {
@@ -167,17 +195,36 @@ public class PostService {
      * 좋아요 수와 댓글 수를 기반으로 인기도를 계산합니다.
      */
     @Transactional
+    @SuppressWarnings("unchecked")
     public Page<PostDTO> getPopularPosts(Pageable pageable) {
+        String cacheKey = POPULAR_POSTS_KEY + ":" + pageable.getPageNumber() + ":" + pageable.getPageSize();
+
+        // 1. Redis에서 먼저 조회
+        Object cachedValue = redisTemplate.opsForValue().get(cacheKey);
+        Object totalElements = redisTemplate.opsForValue().get(cacheKey + ":total");
+
+        if (cachedValue != null && totalElements != null) {
+            List<PostDTO> cachedList = (List<PostDTO>) cachedValue;
+            long total = ((Number) totalElements).longValue();  // 안전한 형변환
+            return new PageImpl<>(cachedList, pageable, total);
+        }
+
+        // 2. 캐시에 없으면 DB에서 조회
         Page<Post> posts = postRepository.findPopularPosts(pageable);
-        return posts.map(post -> {
+        Page<PostDTO> postDTOs = posts.map(post -> {
             PostDTO dto = convertToDTO(post, post.getUser());
             dto.setLikedBy(post.getLikes().stream()
                     .map(like -> like.getUser().getId())
                     .collect(Collectors.toSet()));
             return dto;
         });
-    }
 
+        // 3. Redis에 저장 - TTL 제거 (수동으로만 갱신)
+        redisTemplate.opsForValue().set(cacheKey, postDTOs.getContent());
+        redisTemplate.opsForValue().set(cacheKey + ":total", postDTOs.getTotalElements());
+
+        return postDTOs;
+    }
 
     /**
      * 실시간 인기 게시물 조회 메서드
@@ -200,51 +247,4 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    // 앞으로 구현될 기능: 게시물 검색 기능
-    public List<PostDTO> searchPosts(String keyword) {
-        // 키워드로 제목 또는 내용 검색
-        return null; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물 필터링 기능
-    public List<PostDTO> getFilteredPosts(Long userId, String filter) {
-        // 친구의 게시물, 최신순 등으로 필터링
-        return null; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물 수정 기록 기능
-    public void addEditHistory(Long postId) {
-        // 게시물 수정 기록 추가
-        return; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물 신고 기능
-    public void reportPost(Long postId, Long userId, String reason) {
-        // 게시물 신고 처리
-        return; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물 통계 기능
-//    public PostStatisticsDTO getPostStatistics(Long postId) {
-//        // 게시물 통계 반환
-//        return null; // 실제 구현 필요
-//    }
-
-    // 앞으로 구현될 기능: 게시물 알림 관리 기능
-    public void togglePostNotification(Long postId, Long userId) {
-        // 게시물 알림 설정 관리
-        return; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물에 대한 액세스 제어 기능
-    public void setPostAccessControl(Long postId, List<Long> allowedUserIds) {
-        // 특정 사용자만 게시물 접근 허용
-        return; // 실제 구현 필요
-    }
-
-    // 앞으로 구현될 기능: 게시물 버전 관리 기능
-    public void managePostVersion(Long postId) {
-        // 게시물 버전 관리
-        return; // 실제 구현 필요
-    }
 }

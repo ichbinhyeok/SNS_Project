@@ -35,3 +35,17 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Database Files ###
+/mariadb/data/
+/redis-data/
+*.rdb
+*.aof
+aria_log.*
+*.ibd
+*.frm
+ib_buffer_pool
+ib_logfile*
+ibdata*
+undo*
+ddl_recovery.log

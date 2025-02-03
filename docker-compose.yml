@@ -2,9 +2,13 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.dev}  # 환경변수로 선택
     ports:
       - "8080:8080"
+      - "9010:9010"  # JMX 포트 매핑
+      - "1099:1099"  # RMI 포트 (옵션)
     volumes:
       - .:/app
       - gradle-cache:/root/.gradle
@@ -22,6 +26,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=1234
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+      - JAVA_OPTS=-Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=0.0.0.0
 
   mariadb:
     image: mariadb:latest
@@ -47,10 +52,9 @@ services:
           memory: 1G
     ports:
       - "6379:6379"
-
-    command: redis-server --appendonly yes  # 데이터 지속성을 위한 AOF 설정
+    command: redis-server --appendonly yes
     volumes:
-            - redis-data:/data  # 데이터 영속성을 위한 볼륨 추가
+      - redis-data:/data
 
   portainer:
     image: portainer/portainer-ce:latest

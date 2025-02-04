@@ -22,8 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,7 +98,7 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public Page<CommentHierarchyDTO> getRootComments(Long postId, Pageable pageable) {
-        Page<Comment> rootComments = commentRepository.findByPostIdAndParentCommentIsNull(postId, pageable);
+        Page<Comment> rootComments = commentRepository.findRootComments(postId, pageable);
 
         List<CommentHierarchyDTO> hierarchyDTOs = rootComments.stream()
                 .map(comment -> buildCommentHierarchy(comment, true, true)) // 루트 댓글임을 명시
@@ -111,14 +110,45 @@ public class CommentService {
     // 특정 댓글의 모든 자식 댓글 조회 (페이징 없음)
     @Transactional(readOnly = true)
     public List<CommentHierarchyDTO> getAllChildComments(Long parentCommentId) {
-        Comment parentComment = commentRepository.findById(parentCommentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Parent comment not found"));
+        // 한 번의 쿼리로 모든 계층 구조를 조회
+        List<Comment> allComments = commentRepository.findAllChildrenHierarchy(parentCommentId);
 
-        // 직계 자식 댓글들을 가져와서 각각의 전체 계층구조를 구성
-        return parentComment.getChildrenComments().stream()
-                .sorted(Comparator.comparing(Comment::getCreatedDate))
-                .map(this::buildCommentHierarchyWithAllDescendants)
+        // 메모리에서 계층 구조 구성
+        Map<Long, CommentHierarchyDTO> dtoMap = new HashMap<>();
+        List<CommentHierarchyDTO> firstLevelComments = new ArrayList<>();
+
+        // 1단계: 모든 댓글을 DTO로 변환
+        allComments.forEach(comment -> {
+            CommentHierarchyDTO dto = convertToHierarchyDTO(comment);
+            dtoMap.put(comment.getId(), dto);
+
+            if (comment.getParentComment().getId().equals(parentCommentId)) {
+                firstLevelComments.add(dto);
+            }
+        });
+
+        // 2단계: 계층 구조 구성
+        allComments.forEach(comment -> {
+            if (!comment.getParentComment().getId().equals(parentCommentId)) {
+                CommentHierarchyDTO parentDto = dtoMap.get(comment.getParentComment().getId());
+                if (parentDto.getReplies() == null) {
+                    parentDto.setReplies(new ArrayList<>());
+                }
+                parentDto.getReplies().add(dtoMap.get(comment.getId()));
+            }
+        });
+
+        return firstLevelComments;
+    }
+    // 댓글의 자식 조회 (페이징 처리)
+    @Transactional(readOnly = true)
+    public Page<CommentHierarchyDTO> getChildComments(Long parentCommentId, Pageable pageable) {
+        Page<Comment> childComments = commentRepository.findChildCommentsWithUser(parentCommentId, pageable);
+        List<CommentHierarchyDTO> dtos = childComments.stream()
+                .map(comment -> buildCommentHierarchy(comment, false, false))  // buildCommentHierarchy 메서드 사용
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, childComments.getTotalElements());
     }
 
 
@@ -134,11 +164,11 @@ public class CommentService {
 
         if (includeChildren && !comment.getChildrenComments().isEmpty()) {
             List<CommentHierarchyDTO> replies;
-            if (isRoot) {  // 루트 댓글인 경우에만 2개로 제한
+            if (isRoot) {
                 replies = comment.getChildrenComments().stream()
                         .sorted(Comparator.comparing(Comment::getCreatedDate))
-                        .limit(2)  // 루트 댓글의 직계 자식만 2개로 제한
-                        .map(child -> buildCommentHierarchy(child, false, false))  // 자식의 자식은 포함하지 않음
+                        .limit(2)
+                        .map(child -> buildCommentHierarchy(child, false, false))
                         .collect(Collectors.toList());
             } else {
                 replies = comment.getChildrenComments().stream()
@@ -149,7 +179,6 @@ public class CommentService {
             dto.setReplies(replies);
         }
 
-        dto.setTotalReplies(comment.calculateTotalReplies());
         return dto;
     }
 
@@ -163,7 +192,6 @@ public class CommentService {
         dto.setCreatedAt(comment.getCreatedDate());
         dto.setDepth(comment.getDepth());
 
-        // 자식 댓글이 있는 경우 재귀적으로 처리
         if (!comment.getChildrenComments().isEmpty()) {
             List<CommentHierarchyDTO> childReplies = comment.getChildrenComments().stream()
                     .sorted(Comparator.comparing(Comment::getCreatedDate))
@@ -172,9 +200,11 @@ public class CommentService {
             dto.setReplies(childReplies);
         }
 
-        dto.setTotalReplies(comment.calculateTotalReplies());
         return dto;
     }
+
+
+
     @Transactional
     public void likeComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -183,8 +213,7 @@ public class CommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (comment.getLikes().stream()
-                .anyMatch(like -> like.getUser().getId().equals(userId))) {
+        if (commentRepository.existsByCommentIdAndUserId(commentId, userId)) {
             throw new AlreadyLikedException("Already liked this comment");
         }
 
@@ -215,6 +244,14 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
+
+    // 필요한 경우 직계 자식 댓글 수만 반환하는 메서드 추가
+    public int getDirectRepliesCount(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        return comment.getChildrenComments().size();
+    }
+
     private CommentDTO convertToDTO(Comment comment) {
         return new CommentDTO(
                 comment.getId(),
@@ -222,5 +259,19 @@ public class CommentService {
                 comment.getContent(),
                 comment.getUser().getId()
         );
+    }
+
+    private CommentHierarchyDTO convertToHierarchyDTO(Comment comment) {
+        CommentHierarchyDTO dto = new CommentHierarchyDTO();
+        dto.setId(comment.getId());
+        dto.setPostId(comment.getPost().getId());
+        dto.setContent(comment.getContent());
+        dto.setAuthorId(comment.getUser().getId());
+        dto.setAuthorName(comment.getUser().getUsername());
+        dto.setCreatedAt(comment.getCreatedDate());
+        dto.setDepth(comment.getDepth());
+        // replies는 이미 ArrayList로 초기화되어 있음 (DTO 클래스에서 초기화)
+
+        return dto;
     }
 }

@@ -19,6 +19,7 @@ public class CommentHierarchyDTO {
     private LocalDateTime createdAt;
     private int depth;
     private List<CommentHierarchyDTO> replies = new ArrayList<>();
-    private int totalReplies; // 총 대댓글 수 추가
+
+//    private int totalReplies; // 총 대댓글 수 추가
 
 }

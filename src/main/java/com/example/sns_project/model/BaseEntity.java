@@ -32,4 +32,16 @@ public abstract class BaseEntity {
         modifiedDate = LocalDateTime.now();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BaseEntity)) return false;
+        BaseEntity that = (BaseEntity) o;
+        return getId() != null && getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

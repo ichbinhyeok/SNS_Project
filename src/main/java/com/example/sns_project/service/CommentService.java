@@ -97,7 +97,7 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CommentHierarchyDTO> getRootComments(Long postId, Pageable pageable) {
+        public Page<CommentHierarchyDTO> getRootComments(Long postId, Pageable pageable) {
         Page<Comment> rootComments = commentRepository.findRootComments(postId, pageable);
 
         List<CommentHierarchyDTO> hierarchyDTOs = rootComments.stream()

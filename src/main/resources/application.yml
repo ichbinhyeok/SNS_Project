@@ -16,6 +16,8 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
+#        session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 1000  # 1초 이상 걸리는 쿼리 로깅
+#        generate_statistics: true  # 쿼리 통계 활성화
         default_batch_fetch_size: 100
         format_sql: false
         jdbc:
@@ -43,13 +45,22 @@ management:
 
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 200      # 최대 쓰레드 수
+      min-spare: 10 # 최소 유지 쓰레드 수
+    accept-count: 100 # 대기 큐 사이즈
+
 
 logging:
   level:
     com.example.sns_project.batch.aspect: INFO
-    # SQL 로깅 추가
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    # SQL 로깅 수준 조정
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+#    org.hibernate.stat: DEBUG  # 하이버네이트 통계 로깅
+#    org.hibernate.SQL_SLOW: INFO  # 슬로우 쿼리 로깅
+
 
 springdoc:
   packages-to-scan: com.example.sns_project.controller

@@ -2,6 +2,7 @@ package com.example.sns_project.controller;
 
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.CommentHierarchyDTO;
+import com.example.sns_project.projection.CommentHierarchyProjection;
 import com.example.sns_project.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,7 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Sort;
 
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -54,9 +57,15 @@ public class CommentController {
     @Operation(summary = "자식 댓글 전체 조회", description = "특정 댓글의 모든 하위 댓글을 조회합니다.")
     public ResponseEntity<List<CommentHierarchyDTO>> getAllChildComments(
             @PathVariable Long commentId) {
-        return ResponseEntity.ok(commentService.getAllChildComments(commentId));
-    }
 
+        List<CommentHierarchyProjection> projections = commentService.getAllChildComments(commentId);
+
+        List<CommentHierarchyDTO> comments = projections.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(comments);
+    }
 
 
     @PutMapping("/{commentId}")
@@ -100,5 +109,20 @@ public class CommentController {
         Long userId = (Long) request.getAttribute("userId");
         commentService.unlikeComment(commentId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    private CommentHierarchyDTO convertToDTO(CommentHierarchyProjection projection) {
+        return new CommentHierarchyDTO(
+                projection.getId(),             // id
+                projection.getPostId(),         // postId
+                projection.getContent(),        // content
+                projection.getCreatedDate(),    // createdAt
+                projection.getModifiedDate(),   // modifiedDate
+                projection.getDepth(),          // depth
+                projection.getParentCommentId(),// parentCommentId
+                projection.getUserId(),         // authorId
+                projection.getAuthorName(),     // authorName
+                new ArrayList<>()               // replies는 기본값이므로 빈 리스트로 전달
+        );
     }
 }

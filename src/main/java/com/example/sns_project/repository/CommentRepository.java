@@ -3,6 +3,7 @@ package com.example.sns_project.repository;
 
 // 댓글 데이터 접근을 위한 JPA 레포지토리
 import com.example.sns_project.model.Comment;
+import com.example.sns_project.projection.CommentHierarchyProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -100,13 +101,77 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     ORDER BY c.path
 """, nativeQuery = true)
     List<Comment> findAllChildrenHierarchy(@Param("parentId") Long parentId);
+
+
+
+    @Query(value = """
+    WITH RECURSIVE CommentHierarchy AS (
+        -- 초기 선택: 첫 번째 레벨의 자식들
+        SELECT
+            c.id,
+            c.content,
+            c.created_date,
+            c.modified_date,
+            c.depth,
+            c.parent_comment_id,
+            c.post_id,
+            c.user_id,
+            1 as hierarchy_depth,
+            CAST(c.id AS CHAR(255)) AS path
+        FROM SNS.comments c
+        WHERE c.parent_comment_id = :parentId
+
+        UNION ALL
+
+        -- 재귀 부분: 각 레벨의 자식들을 연속해서 선택
+        SELECT
+            c.id,
+            c.content,
+            c.created_date,
+            c.modified_date,
+            c.depth,
+            c.parent_comment_id,
+            c.post_id,
+            c.user_id,
+            h.hierarchy_depth + 1,
+            CONCAT(h.path, ',', c.id)
+        FROM SNS.comments c
+        INNER JOIN CommentHierarchy h ON c.parent_comment_id = h.id
+        WHERE h.hierarchy_depth < 10
+    )
+    SELECT
+        c.*,
+        u.id as author_id,
+        u.username as author_name,
+        u.email as author_email
+    FROM CommentHierarchy c
+    JOIN SNS.users u ON c.user_id = u.id
+    ORDER BY c.path
+""", nativeQuery = true)    List<CommentHierarchyProjection> findAllChildrenHierarchyProjection(@Param("parentId") Long parentId);
+
+
+
     // 최상위 댓글 페이징 조회
     Page<Comment> findByPostIdAndParentCommentIsNull(Long postId, Pageable pageable);
-
-
-
-
-
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

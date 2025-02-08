@@ -11,6 +11,7 @@ import com.example.sns_project.model.User;
 import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
 import com.example.sns_project.repository.UserRepository;
 import com.github.javafaker.Faker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class AuthService {
     private final UserRepository userRepository;
@@ -34,15 +36,27 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest loginRequest) {
+        long startTime = System.currentTimeMillis();
+
         User user = userRepository.findByUsername(loginRequest.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        long afterDbTime = System.currentTimeMillis();
+        log.info("🔍 DB 조회 시간: {} ms", (afterDbTime - startTime));
 
         if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            String token = jwtUtil.generateToken(user);  // user 객체 전체를 전달
+            long afterPasswordTime = System.currentTimeMillis();
+            log.info("🔍 비밀번호 검증 시간: {} ms", (afterPasswordTime - afterDbTime));
+
+            String token = jwtUtil.generateToken(user);
+            long afterTokenTime = System.currentTimeMillis();
+            log.info("🔍 JWT 생성 시간: {} ms", (afterTokenTime - afterPasswordTime));
+
             return new AuthResponse(token, "로그인 성공");
         }
+
         throw new RuntimeException("Invalid data");
     }
+
 
     public UserDTO register(UserRegistrationDTO userRegistrationDTO) {
         // UserRegistrationDTO를 User 엔티티로 변환

@@ -1,6 +1,6 @@
 FROM openjdk:17-slim
 COPY build/libs/*.jar app.jar
-EXPOSE 8080 9010
+EXPOSE 8080 9010 8081
 ENTRYPOINT ["java", \
             "-Dcom.sun.management.jmxremote", \
             "-Dcom.sun.management.jmxremote.port=9010", \

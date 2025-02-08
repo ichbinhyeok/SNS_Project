@@ -1,5 +1,5 @@
 FROM gradle:7.6.1-jdk17
 WORKDIR /app
 COPY . .
-EXPOSE 8080 9010
+EXPOSE 8080 9010 8081
 ENTRYPOINT ["gradle", "bootRun", "--no-daemon"]

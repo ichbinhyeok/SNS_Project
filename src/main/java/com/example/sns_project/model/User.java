@@ -10,7 +10,13 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_users_username", columnList = "username"),
+                @Index(name = "idx_users_email", columnList = "email")
+        }
+)
 public class User extends BaseEntity {
     // ID 필드는 BaseEntity에서 상속받음
 
@@ -23,7 +29,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String password;      // 사용자 비밀번호
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

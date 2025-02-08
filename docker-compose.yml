@@ -4,11 +4,12 @@ services:
   app:
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.dev}  # 환경변수로 선택
+      dockerfile: ${DOCKERFILE:-Dockerfile.profile}
     ports:
       - "8080:8080"
-      - "9010:9010"  # JMX 포트 매핑
-      - "1099:1099"  # RMI 포트 (옵션)
+      - "8081:8081"  # 로그인 전용 포트 추가
+      - "9010:9010"
+      - "1099:1099"
     volumes:
       - .:/app
       - gradle-cache:/root/.gradle
@@ -26,7 +27,14 @@ services:
       - SPRING_DATASOURCE_PASSWORD=1234
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - JAVA_OPTS=-Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=0.0.0.0
+      - JAVA_OPTS=
+        -Dcom.sun.management.jmxremote
+        -Dcom.sun.management.jmxremote.port=9010
+        -Dcom.sun.management.jmxremote.rmi.port=9010
+        -Dcom.sun.management.jmxremote.authenticate=false
+        -Dcom.sun.management.jmxremote.ssl=false
+        -Djava.rmi.server.hostname=0.0.0.0
+        -Dcom.sun.management.jmxremote.local.only=false
 
   mariadb:
     image: mariadb:latest

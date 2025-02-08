@@ -124,7 +124,7 @@ public class PostService {
         List<Post> posts = postRepository.findByUserId(userId);
         return posts.stream()
                 .map(post -> convertToDTO(post, post.getUser()))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     // 현재 구현된 기능: 게시물 좋아요 기능
@@ -136,7 +136,7 @@ public class PostService {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
-        User user = userService.findById(userId);
+        User user = userRepository.getReferenceById(userId); // findById 대신 프록시 객체 사용
 
         PostLike postLike = new PostLike();
         postLike.setPost(post);
@@ -150,18 +150,12 @@ public class PostService {
     // 현재 구현된 기능: 게시물 좋아요 취소
     @Transactional
     public void unlikePost(Long postId, Long userId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
-        User user = userService.findById(userId);
+        // 단일 쿼리로 PostLike 조회
+        PostLike postLike = postLikeRepository.findByPostIdAndUserId(postId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("좋아요를 누르지 않은 게시물입니다."));
 
-        PostLike postLike = post.getLikes().stream()
-                .filter(like -> like.getUser().getId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("User has not liked this post"));
-
-        post.getLikes().remove(postLike);
-        user.getLikedPosts().remove(postLike);
-        postRepository.save(post);
+        // 직접 삭제
+        postLikeRepository.delete(postLike);
     }
 
     // DTO 변환 헬퍼 메서드

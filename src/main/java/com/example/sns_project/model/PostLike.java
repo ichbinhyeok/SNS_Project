@@ -11,7 +11,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-@Table(name="post_likes")
+@Table(name = "post_likes",
+        indexes = {
+                @Index(name = "idx_post_user", columnList = "post_id,user_id", unique = true)
+        }
+)
 public class PostLike extends BaseEntity{
     // ID 필드는 BaseEntity에서 상속받음
 

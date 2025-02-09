@@ -1,6 +1,7 @@
 package com.example.sns_project.controller;
 
 // 사용자 인증 관련 API를 처리하는 컨트롤러
+
 import com.example.sns_project.dto.AuthResponse;
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
@@ -40,8 +41,6 @@ public class AuthController {
     }
 
 
-
-
     @PostMapping("/generate-DummyUsers")
     public ResponseEntity<List<String>> generateAndRegisterDummyUsers(@RequestParam int count) {
         if (count <= 0) {
@@ -58,5 +57,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/update-password-strength")
+    @Operation(summary = "비밀번호 강도 업데이트", description = "모든 사용자의 비밀번호 해시 강도를 확인합니다.")
+    public ResponseEntity<String> updatePasswordStrength() {
+        try {
+            authService.updateAllPasswordStrength();
+            return ResponseEntity.ok("비밀번호 강도 확인이 완료되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("비밀번호 강도 확인 중 오류 발생: " + e.getMessage());
+        }
+    }
     // 앞으로: 예외 처리 및 응답 형식 정의 추가 필요
 }

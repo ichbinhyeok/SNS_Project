@@ -1,6 +1,7 @@
 package com.example.sns_project.service;
 
 // 사용자 인증 및 권한 관리를 처리하는 서비스
+
 import com.example.sns_project.dto.AuthResponse;
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
@@ -14,6 +15,7 @@ import com.github.javafaker.Faker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +33,7 @@ public class AuthService {
     public AuthService(UserRepository userRepository, RoleRepository roleRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = new BCryptPasswordEncoder(8);
         this.jwtUtil = jwtUtil;
     }
 
@@ -82,8 +84,6 @@ public class AuthService {
     }
 
 
-
-
     public List<String> generateAndRegisterUsers(int count) {
         Faker faker = new Faker();
         List<UserRegistrationDTO> userRegistrationDTOs = new ArrayList<>();
@@ -108,6 +108,27 @@ public class AuthService {
 
         return registeredUsernames;
     }
+
+
+    @Transactional
+    public void updateAllPasswordStrength() {
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            needsUpgrade(user.getPassword());
+        }
+    }
+
+    // 비밀번호 해시가 업그레이드가 필요한지 확인하는 메서드
+    private boolean needsUpgrade(String hashedPassword) {
+        if (hashedPassword == null || !hashedPassword.startsWith("$2a$")) {
+            return true;
+        }
+        // BCrypt 해시에서 강도 추출 (형식: $2a$10$...)
+        String workFactor = hashedPassword.split("\\$")[2];
+        return Integer.parseInt(workFactor) > 8;
+    }
+
+
 
 
     // 앞으로: 비밀번호 검증 로직 및 예외 처리 추가

@@ -122,7 +122,8 @@ public class CommentController {
                 projection.getParentCommentId(),// parentCommentId
                 projection.getUserId(),         // authorId
                 projection.getAuthorName(),     // authorName
-                new ArrayList<>()               // replies는 기본값이므로 빈 리스트로 전달
+                projection.getReplyCount()      // replyCount 추가
         );
+
     }
 }

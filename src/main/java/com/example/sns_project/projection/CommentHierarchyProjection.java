@@ -15,4 +15,6 @@ public interface CommentHierarchyProjection {
     String getAuthorEmail();            // author_email
     Integer getHierarchyDepth();        // hierarchy_depth
     String getPath();                   // path
+    long getReplyCount();  // 추가
+
 }

@@ -2,6 +2,7 @@ package com.example.sns_project.repository;
 
 
 // 댓글 데이터 접근을 위한 JPA 레포지토리
+import com.example.sns_project.dto.CommentHierarchyDTO;
 import com.example.sns_project.model.Comment;
 import com.example.sns_project.projection.CommentHierarchyProjection;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,29 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+
+
+    @Query("""
+    SELECT new com.example.sns_project.dto.CommentHierarchyDTO(
+        c.id, 
+        c.post.id, 
+        c.content, 
+        c.createdDate, 
+        c.modifiedDate,
+        c.depth,
+        c.parentComment.id,
+        c.user.id,
+        c.user.username,
+        (SELECT COUNT(r) FROM Comment r WHERE r.parentComment.id = c.id)
+    )
+    FROM Comment c 
+    WHERE c.post.id = :postId 
+    AND c.parentComment IS NULL 
+    ORDER BY c.createdDate DESC
+""")
+    Page<CommentHierarchyDTO> findRootCommentsDto(@Param("postId") Long postId, Pageable pageable);
+
+
 
     // 페이징을 위한 댓글 ID 조회
     @Query("SELECT c.id FROM Comment c")

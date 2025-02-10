@@ -97,15 +97,10 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
+
     @Transactional(readOnly = true)
-        public Page<CommentHierarchyDTO> getRootComments(Long postId, Pageable pageable) {
-        Page<Comment> rootComments = commentRepository.findRootComments(postId, pageable);
-
-        List<CommentHierarchyDTO> hierarchyDTOs = rootComments.stream()
-                .map(comment -> buildCommentHierarchy(comment, true, true)) // 루트 댓글임을 명시
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(hierarchyDTOs, pageable, rootComments.getTotalElements());
+    public Page<CommentHierarchyDTO> getRootComments(Long postId, Pageable pageable) {
+        return commentRepository.findRootCommentsDto(postId, pageable);
     }
 
     // getChildComment 수정 전 0206

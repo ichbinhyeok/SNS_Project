@@ -11,18 +11,33 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CommentHierarchyDTO {
-
     private Long id;
     private Long postId;
     private String content;
     private LocalDateTime createdAt;
-    private LocalDateTime modifiedDate; // 이 필드는 사용하려면 추가해야 함
+    private LocalDateTime modifiedDate;
     private int depth;
     private Long parentCommentId;
     private Long authorId;
     private String authorName;
+    private long replyCount;  // 대댓글 수
     private List<CommentHierarchyDTO> replies = new ArrayList<>();
 
-//    private int totalReplies; // 총 대댓글 수 추가
-
+    public CommentHierarchyDTO(
+            Long id, Long postId, String content,
+            LocalDateTime createdAt, LocalDateTime modifiedDate,
+            int depth, Long parentCommentId,
+            Long authorId, String authorName,
+            long replyCount) {
+        this.id = id;
+        this.postId = postId;
+        this.content = content;
+        this.createdAt = createdAt;
+        this.modifiedDate = modifiedDate;
+        this.depth = depth;
+        this.parentCommentId = parentCommentId;
+        this.authorId = authorId;
+        this.authorName = authorName;
+        this.replyCount = replyCount;
+    }
 }

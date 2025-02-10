@@ -1,7 +1,5 @@
 package com.example.sns_project.controller;
 
-// 사용자 인증 관련 API를 처리하는 컨트롤러
-
 import com.example.sns_project.dto.AuthResponse;
 import com.example.sns_project.dto.LoginRequest;
 import com.example.sns_project.dto.UserDTO;
@@ -20,7 +18,7 @@ import java.util.List;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;  // AuthService 의존성 주입
+    private final AuthService authService;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
@@ -37,9 +35,8 @@ public class AuthController {
     @Operation(summary = "회원가입", description = "새 사용자를 등록합니다.")
     public ResponseEntity<UserDTO> register(@Parameter(description = "회원가입 요청 데이터") @RequestBody UserRegistrationDTO userRegistrationDTO) {
         UserDTO registeredUser = authService.register(userRegistrationDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);  // 등록된 사용자 정보를 반환
+        return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
     }
-
 
     @PostMapping("/generate-DummyUsers")
     public ResponseEntity<List<String>> generateAndRegisterDummyUsers(@RequestParam int count) {
@@ -51,22 +48,20 @@ public class AuthController {
             List<String> registeredUsernames = authService.generateAndRegisterUsers(count);
             return ResponseEntity.ok(registeredUsernames);
         } catch (Exception e) {
-            // 예외 처리 로직 (예: 사용자 등록 실패)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonList("Failed to register users: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/update-password-strength")
-    @Operation(summary = "비밀번호 강도 업데이트", description = "모든 사용자의 비밀번호 해시 강도를 확인합니다.")
-    public ResponseEntity<String> updatePasswordStrength() {
+    @GetMapping("/check-password-strengths")
+    @Operation(summary = "비밀번호 강도 체크", description = "모든 사용자의 비밀번호 해시 강도를 확인합니다.")
+    public ResponseEntity<String> checkPasswordStrengths() {
         try {
-            authService.updateAllPasswordStrength();
-            return ResponseEntity.ok("비밀번호 강도 확인이 완료되었습니다.");
+            int count = authService.checkPasswordStrengths();
+            return ResponseEntity.ok(String.format("비밀번호 강도 업그레이드가 필요한 계정 수: %d", count));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("비밀번호 강도 확인 중 오류 발생: " + e.getMessage());
         }
     }
-    // 앞으로: 예외 처리 및 응답 형식 정의 추가 필요
 }

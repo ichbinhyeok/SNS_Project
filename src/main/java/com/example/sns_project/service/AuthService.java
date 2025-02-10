@@ -1,15 +1,10 @@
 package com.example.sns_project.service;
 
-// 사용자 인증 및 권한 관리를 처리하는 서비스
-
-import com.example.sns_project.dto.AuthResponse;
-import com.example.sns_project.dto.LoginRequest;
-import com.example.sns_project.dto.UserDTO;
-import com.example.sns_project.dto.UserRegistrationDTO; // UserRegistrationDTO 추가
+import com.example.sns_project.dto.*;
 import com.example.sns_project.jwt.JwtUtil;
-import com.example.sns_project.model.Role; // Role 임포트
+import com.example.sns_project.model.Role;
 import com.example.sns_project.model.User;
-import com.example.sns_project.repository.RoleRepository; // RoleRepository 임포트
+import com.example.sns_project.repository.RoleRepository;
 import com.example.sns_project.repository.UserRepository;
 import com.github.javafaker.Faker;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -33,23 +27,38 @@ public class AuthService {
     public AuthService(UserRepository userRepository, RoleRepository roleRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder(8);
+        this.passwordEncoder = new BCryptPasswordEncoder(8);  // 강도를 n으로 설정
         this.jwtUtil = jwtUtil;
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest loginRequest) {
         long startTime = System.currentTimeMillis();
 
-        User user = userRepository.findByUsername(loginRequest.getUsername())
+        // 1. 로그인 정보 조회
+        LoginUserDTO userDTO = userRepository.findUserForLogin(loginRequest.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         long afterDbTime = System.currentTimeMillis();
         log.info("🔍 DB 조회 시간: {} ms", (afterDbTime - startTime));
 
-        if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+        // 2. 비밀번호 검증
+        if (passwordEncoder.matches(loginRequest.getPassword(), userDTO.getPassword())) {
+            // 비밀번호 강도 업데이트가 필요한 경우
+            if (needsUpgrade(userDTO.getPassword())) {
+                log.info("🔄 사용자 {} 의 비밀번호 강도를 업데이트합니다.", userDTO.getUsername());
+                String newHash = passwordEncoder.encode(loginRequest.getPassword());
+
+                // 네이티브 쿼리로 직접 업데이트
+                userRepository.updatePassword(userDTO.getId(), newHash);
+            }
+
             long afterPasswordTime = System.currentTimeMillis();
             log.info("🔍 비밀번호 검증 시간: {} ms", (afterPasswordTime - afterDbTime));
 
-            String token = jwtUtil.generateToken(user);
+            // 3. 토큰 생성
+            String token = jwtUtil.generateToken(userDTO.getId());
+
             long afterTokenTime = System.currentTimeMillis();
             log.info("🔍 JWT 생성 시간: {} ms", (afterTokenTime - afterPasswordTime));
 
@@ -59,30 +68,27 @@ public class AuthService {
         throw new RuntimeException("Invalid data");
     }
 
-
     public UserDTO register(UserRegistrationDTO userRegistrationDTO) {
-        // UserRegistrationDTO를 User 엔티티로 변환
         User user = new User();
         user.setUsername(userRegistrationDTO.getUsername());
         user.setEmail(userRegistrationDTO.getEmail());
 
-        // 비밀번호를 암호화하여 저장
+        // 비밀번호를 강도 n으로 암호화하여 저장
         user.setPassword(passwordEncoder.encode(userRegistrationDTO.getPassword()));
 
         // 기본 역할 설정 (예: ROLE_USER)
-        Role userRole = roleRepository.findByName("ROLE_USER") // ROLE_USER 역할을 가져옴
+        Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("기본 역할이 존재하지 않습니다."));
 
         // Set<Role>으로 설정
-        user.setRoles(Collections.singleton(userRole)); // 역할을 Set으로 설정
+        user.setRoles(Collections.singleton(userRole));
 
         // 사용자 저장
         userRepository.save(user);
 
         // UserDTO에 ID 추가하여 반환
-        return new UserDTO(user.getId(), user.getUsername(), user.getEmail()); // 등록된 사용자 DTO 반환
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
-
 
     public List<String> generateAndRegisterUsers(int count) {
         Faker faker = new Faker();
@@ -95,27 +101,30 @@ public class AuthService {
             userRegistrationDTO.setEmail(faker.internet().emailAddress());
             String password = "123";
             userRegistrationDTO.setPassword(password);
-
-//            userRegistrationDTO.setPassword(faker.internet().password());
-
             userRegistrationDTOs.add(userRegistrationDTO);
         }
 
         for (UserRegistrationDTO userRegistrationDTO : userRegistrationDTOs) {
-            UserDTO registeredUser = register(userRegistrationDTO); // register 메서드는 사용자 등록 로직을 처리합니다.
+            UserDTO registeredUser = register(userRegistrationDTO);
             registeredUsernames.add(registeredUser.getUsername());
         }
 
         return registeredUsernames;
     }
 
-
     @Transactional
-    public void updateAllPasswordStrength() {
+    public int checkPasswordStrengths() {
         List<User> users = userRepository.findAll();
+        int needsUpgradeCount = 0;
+
         for (User user : users) {
-            needsUpgrade(user.getPassword());
+            if (needsUpgrade(user.getPassword())) {
+                needsUpgradeCount++;
+                log.info("사용자 {} 의 비밀번호 강도 업그레이드 필요", user.getUsername());
+            }
         }
+
+        return needsUpgradeCount;
     }
 
     // 비밀번호 해시가 업그레이드가 필요한지 확인하는 메서드
@@ -127,9 +136,4 @@ public class AuthService {
         String workFactor = hashedPassword.split("\\$")[2];
         return Integer.parseInt(workFactor) > 8;
     }
-
-
-
-
-    // 앞으로: 비밀번호 검증 로직 및 예외 처리 추가
 }

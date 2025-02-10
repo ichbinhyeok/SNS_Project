@@ -1,6 +1,7 @@
 package com.example.sns_project.repository;
 
 // 게시글 데이터 접근을 위한 JPA 레포지토리
+import com.example.sns_project.dto.PostDetailDTO;
 import com.example.sns_project.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,11 +13,25 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUserId(Long authorId);  // user ID로 게시글 조회
     List<Post> findAllByOrderByCreatedDateDesc(); // 최신 게시글 정렬
 
+
+    @Query("""
+    SELECT new com.example.sns_project.dto.PostDetailDTO(
+        p.id, p.title, p.content,
+        p.user.id, p.user.username, p.user.email,
+        (SELECT COUNT(pl) FROM PostLike pl WHERE pl.post = p),
+        (SELECT COUNT(pl) > 0 FROM PostLike pl WHERE pl.post = p AND pl.user.id = :userId),
+        p.createdDate
+    )
+    FROM Post p
+    WHERE p.id = :postId
+""")
+    Optional<PostDetailDTO> findPostDetailById(@Param("postId") Long postId, @Param("userId") Long userId);
 
     @Query("SELECT COUNT(p) as totalPosts, " +
             "COUNT(DISTINCT c) as totalComments, " +

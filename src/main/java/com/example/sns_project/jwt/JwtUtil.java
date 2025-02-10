@@ -13,9 +13,9 @@ public class JwtUtil {
     private final String SECRET_KEY = "your-secret-key-should-be-very-long-and-secure-12345678901234567890";
     private final long EXPIRATION_TIME = 864_000_000; // 10 days
 
-    public String generateToken(User user) {
+    public String generateToken(Long userId) {  // User 객체 대신 userId만 받음
         return Jwts.builder()
-                .setSubject(String.valueOf(user.getId()))
+                .setSubject(String.valueOf(userId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)

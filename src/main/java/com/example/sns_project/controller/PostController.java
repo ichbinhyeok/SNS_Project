@@ -2,6 +2,7 @@ package com.example.sns_project.controller;
 
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
+import com.example.sns_project.dto.PostDetailDTO;
 import com.example.sns_project.exception.ForbiddenException;
 import com.example.sns_project.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,20 +47,21 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "게시글 조회", description = "특정 ID의 게시글을 조회합니다.")
-    public ResponseEntity<PostDTO> getPostById(
-            @Parameter(description = "게시글 ID") @PathVariable("id") Long id) {
-        return ResponseEntity.ok(postService.getPostById(id));
+    public ResponseEntity<PostDetailDTO> getPostById(
+            @PathVariable("id") Long id,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(postService.getPostById(id, userId));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "게시글 수정", description = "특정 ID의 게시글을 수정합니다.")
-    public ResponseEntity<?> updatePost(
+    public ResponseEntity<PostDTO> updatePost(
             @Parameter(description = "게시글 ID") @PathVariable("id") Long id,
             @Parameter(description = "수정할 게시글 데이터") @RequestBody PostDTO postDTO,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        PostDTO existingPost = postService.getPostById(id);
+        PostDetailDTO existingPost = postService.getPostById(id, userId);
 
         if (!existingPost.getAuthor().getId().equals(userId)) {
             throw new ForbiddenException("본인의 게시글만 수정할 수 있습니다.");
@@ -75,7 +77,7 @@ public class PostController {
             @Parameter(description = "게시글 ID") @PathVariable("id") Long id,
             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        PostDTO existingPost = postService.getPostById(id);
+        PostDetailDTO existingPost = postService.getPostById(id, userId);
 
         if (!existingPost.getAuthor().getId().equals(userId)) {
             throw new ForbiddenException("본인의 게시글만 수정할 수 있습니다.");

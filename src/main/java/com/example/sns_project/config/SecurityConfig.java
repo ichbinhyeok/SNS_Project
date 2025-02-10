@@ -22,6 +22,23 @@ public class SecurityConfig {
         return http.build();
     }
 
+
+//    @Bean
+//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        http
+//                .sessionManagement()
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//                .and()
+//                .csrf().disable()
+//                .authorizeRequests()
+//                .requestMatchers("/api/auth/**").permitAll()
+//                .anyRequest().authenticated();
+//
+//        return http.build();
+//    }
+//}
+
+
     // 앞으로: JWT 필터 등록 및 CORS 정책 설정 추가 필요
 }
 

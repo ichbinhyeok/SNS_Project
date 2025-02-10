@@ -2,6 +2,7 @@ package com.example.sns_project.service;
 
 import com.example.sns_project.dto.CommentDTO;
 import com.example.sns_project.dto.PostDTO;
+import com.example.sns_project.dto.PostDetailDTO;
 import com.example.sns_project.dto.UserDTO;
 import com.example.sns_project.enums.NotificationType;
 import com.example.sns_project.exception.AlreadyLikedException;
@@ -113,10 +114,10 @@ public class PostService {
 
     // 현재 구현된 기능: 게시물 ID로 조회
     @Transactional
-    public PostDTO getPostById(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
-        return convertToDTO(post, post.getUser());
+        public PostDetailDTO getPostById(Long postId, Long userId) {
+            return postRepository.findPostDetailById(postId, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
     }
 
     // 현재 구현된 기능: 특정 사용자 ID로 게시물 조회

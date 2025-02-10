@@ -2,9 +2,13 @@ package com.example.sns_project.repository;
 
 // 사용자 데이터 접근을 위한 JPA 레포지토리
 
+import aj.org.objectweb.asm.commons.Remapper;
+import com.example.sns_project.dto.LoginUserDTO;
+import com.example.sns_project.dto.UserDetailsDTO;
 import com.example.sns_project.model.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,7 +23,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 친구가 아닌 사용자 목록 조회
     @Query("SELECT u FROM User u WHERE u.id NOT IN (SELECT f.user2.id FROM Friendship f WHERE f.user1.id = :userId) AND u.id <> :userId")
     List<User> findNonFriendsByUserId(@Param("userId") Long userId);
-    // 앞으로: 추가적인 쿼리 메서드 정의 (예: 사용자 삭제 등)
+
+
+    @Query("SELECT new com.example.sns_project.dto.LoginUserDTO(u.id, u.username, u.password) " +
+            "FROM User u WHERE u.username = :username")
+    Optional<LoginUserDTO> findUserForLogin(@Param("username") String username);
+
+
+    @Modifying
+    @Query(value = "UPDATE users SET password = :newPassword WHERE id = :userId",
+            nativeQuery = true)  // 네이티브 쿼리 사용
+    void updatePassword(@Param("userId") Long userId, @Param("newPassword") String newPassword);
+
+
+
 
     // 특정 사용자명이 존재하는지 확인하는 메서드
     boolean existsByUsername(String username);
@@ -53,6 +70,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
             ) DESC
             """)
     List<User> findRecommendedUsers(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+        SELECT new com.example.sns_project.dto.UserDetailsDTO(
+            u.username, 
+            u.password,
+            r.name
+        )
+        FROM User u
+        LEFT JOIN u.roles r
+        WHERE u.username = :username
+        """)
+    Optional<UserDetailsDTO> findUserDetailsDTO(@Param("username") String username);
+
+
+
 }
 
 

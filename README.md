@@ -29,8 +29,7 @@
 
 ## 💡 최적화 성과
 
-![image.png](attachment:0839bdab-a71c-4dcb-af2b-bacc49e25e76:image.png)
-
+![img.png](img.png)
 ### API별 성능 개선 결과
 
 | API | 최적화 전 |  | 최적화 후 |  | 개선율 |

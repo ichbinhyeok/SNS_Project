@@ -17,7 +17,7 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 2G
     depends_on:
       - mariadb
       - redis
@@ -44,7 +44,7 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 2G
     environment:
       MYSQL_DATABASE: SNS
       MYSQL_ROOT_PASSWORD: 1234

@@ -112,18 +112,18 @@ public class CommentController {
     }
 
     private CommentHierarchyDTO convertToDTO(CommentHierarchyProjection projection) {
-        return new CommentHierarchyDTO(
-                projection.getId(),             // id
-                projection.getPostId(),         // postId
-                projection.getContent(),        // content
-                projection.getCreatedDate(),    // createdAt
-                projection.getModifiedDate(),   // modifiedDate
-                projection.getDepth(),          // depth
-                projection.getParentCommentId(),// parentCommentId
-                projection.getUserId(),         // authorId
-                projection.getAuthorName(),     // authorName
-                projection.getReplyCount()      // replyCount 추가
-        );
-
+        return CommentHierarchyDTO.builder()
+                .id(projection.getId())
+                .content(projection.getContent())
+                .createdAt(projection.getCreatedDate())
+                .modifiedDate(projection.getModifiedDate())
+                .depth(projection.getDepth())
+                .parentCommentId(projection.getParentCommentId())
+                .postId(projection.getPostId())
+                .authorId(projection.getUserId())
+                .authorName(projection.getAuthorName())
+                .depth(projection.getHierarchyDepth())
+                .replyCount(projection.getReplyCount() != null ? projection.getReplyCount() : 0L) // 널 체크 추가
+                .build();
     }
 }

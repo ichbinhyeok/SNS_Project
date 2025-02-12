@@ -1,9 +1,26 @@
 spring:
+  jmx:
+    enabled: true
+
   datasource:
     url: jdbc:mariadb://localhost:3307/SNS?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC
     username: root
     password: 1234
     driver-class-name: org.mariadb.jdbc.Driver
+
+    hikari:
+      register-mbeans: true
+      maximum-pool-size: 50      # 200->150 -> 100 ->50 ->100->20 -> 50
+      minimum-idle: 20            # Changed from 150 to 30
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      pool-name: 'sns-hikari-pool'
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
 
   batch:
     job:
@@ -16,10 +33,12 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-#        session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 1000  # 1초 이상 걸리는 쿼리 로깅
-#        generate_statistics: true  # 쿼리 통계 활성화
-        default_batch_fetch_size: 100
+        show_sql: false
         format_sql: false
+        use_sql_comments: true
+        session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 100  # n ms 이상 걸리는 쿼리만 로깅
+        generate_statistics: true  # Hibernate 성능 통계 활성화
+        default_batch_fetch_size: 1000   # Changed from 100 to 1000
         jdbc:
           batch_size: 10000
         order_inserts: true
@@ -33,35 +52,48 @@ spring:
       host: localhost
       port: 6379
 
-# 기본적인 헬스체크와 메트릭만 노출
+server:
+  tomcat:
+    # 기존 일반 API용 쓰레드 설정
+    threads:
+      max: 50
+      min-spare: 20
+    accept-count: 500
+
+
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,info
+        include: health, metrics, info, hikaricp, threaddump, heapdump
   endpoint:
     health:
       show-details: always
-
-server:
-  port: 8080
-  tomcat:
-    threads:
-      max: 200      # 최대 쓰레드 수
-      min-spare: 10 # 최소 유지 쓰레드 수
-    accept-count: 100 # 대기 큐 사이즈
-
+  metrics:
+    enable:
+      jvm: true  # JVM 관련 메트릭 활성화
+      system: true  # 시스템 관련 메트릭 활성화
+      process: true  # 애플리케이션 프로세스 관련 메트릭 활성화
 
 logging:
   level:
-    com.example.sns_project.batch.aspect: INFO
-    # SQL 로깅 수준 조정
-    org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: INFO
-#    org.hibernate.stat: DEBUG  # 하이버네이트 통계 로깅
-#    org.hibernate.SQL_SLOW: INFO  # 슬로우 쿼리 로깅
+    root: ERROR  # 전체 로그 레벨 ERROR로 변경
 
+    # 특정 패키지 로그 레벨 조정
+    com.example.sns_project: ERROR  # 프로젝트 전체 로그
+    com.example.sns_project.controller: ERROR  # 컨트롤러 로그
+    com.example.sns_project.service: ERROR  # 서비스 로직 로그
 
+    # 데이터베이스 관련 로그
+    org.hibernate.SQL: ERROR  # SQL 쿼리 로그
+    org.hibernate.type.descriptor.sql: ERROR  # SQL 파라미터 값 로그
+
+    # 스프링 관련 로그
+    org.springframework.web: ERROR
+    org.springframework.core: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 springdoc:
   packages-to-scan: com.example.sns_project.controller
   default-consumes-media-type: application/json;charset=UTF-8

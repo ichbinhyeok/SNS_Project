@@ -21,9 +21,9 @@ public class LoginConnectorConfig {
         connector.setPort(8081);
 
         Http11NioProtocol protocol = (Http11NioProtocol) connector.getProtocolHandler();
-        protocol.setMaxThreads(2);
+        protocol.setMaxThreads(4);
         protocol.setMinSpareThreads(2);
-        protocol.setAcceptCount(500);
+        protocol.setAcceptCount(200);
 
         return connector;
     }

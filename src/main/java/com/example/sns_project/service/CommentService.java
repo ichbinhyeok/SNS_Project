@@ -144,31 +144,9 @@ public class CommentService {
         // DB에서 계층 구조를 가져옴
         List<CommentHierarchyProjection> projections = commentRepository.findAllChildrenHierarchyProjection(parentCommentId);
 
-        // 메모리에서 계층 구조를 구성 (필요한 경우)
-        Map<Long, CommentHierarchyProjection> dtoMap = new HashMap<>();
-        List<CommentHierarchyProjection> firstLevelComments = new ArrayList<>();
-
-        projections.forEach(projection -> {
-            dtoMap.put(projection.getId(), projection);
-
-            // 첫 번째 레벨 댓글을 분리
-            if (projection.getParentCommentId().equals(parentCommentId)) {
-                firstLevelComments.add(projection);
-            }
-        });
-
-        // 계층 구조 구성
-        for (CommentHierarchyProjection projection : projections) {
-            if (!projection.getParentCommentId().equals(parentCommentId)) {
-                CommentHierarchyProjection parentProjection = dtoMap.get(projection.getParentCommentId());
-                // 부모 댓글에 자식 댓글 추가 (필요시 List에 추가)
-                // 예: parentProjection.addReply(projection); // (가정: addReply() 메서드가 있으면)
-            }
-        }
-
-        return firstLevelComments;
+        // 모든 하위 댓글 반환
+        return projections;
     }
-
 
 
     // 댓글의 자식 조회 (페이징 처리)

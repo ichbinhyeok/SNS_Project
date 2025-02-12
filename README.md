@@ -39,53 +39,17 @@
 처음에는 단순히 코드 개선만으로 성능을 높일 수 있다고 생각했습니다. 하지만 실제 AWS 환경을 Docker로 구성하여 제한된 자원에서 테스트를 진행하면서, 성능 최적화가 단순한 코드 수정 이상의 것임을 배웠습니다. 
 > #### 특히한정된 자원 내에서 데이터베이스 처리, 커넥션 관리, 캐싱 전략 등 다양한 요소들을 종합적으로 고려해야 한다는 것을 깨달았습니다.
 
-## 🔧 프로젝트 스펙
-### Backend
-- **Language & Framework**
-  - Java 17
-  - Spring Boot 3.1.5
-  - Spring Data JPA
-### Database
-- **Persistent Layer**
-  - MariaDB 10.6
-  - Redis 7.0
-### Monitoring & Testing
-- **Performance Testing**
-  - JMeter 5.6.2: 부하 테스트
-  - VisualVM 2.1.6: CPU, Memory 프로파일링
 
-### DevOps
-- **Containerization**
-  - Docker
-  - Docker Compose
+## 🔧 프로젝트 스펙 & 환경 구성
 
-
-### 환경 구성
-- **애플리케이션 서버**: Spring Boot (Java 17)
-  - 2 Core, 2GB RAM
-  - JPA/Hibernate 사용
-- **데이터베이스**: MariaDB (2 Core, 2GB RAM)
-- **캐시 서버**: Redis (1 Core, 1GB RAM)
-- **인프라**: Docker 컨테이너 기반 구성
-
-**성능 목표**
-- API 응답시간: 300ms 이하
-- 동시 접속자: 200명 처리
-- 목표 TPS: 25 이상
-- 안정적인 리소스 사용률 유지
-
-**성능 테스트 환경**
-- **테스트 도구**:
-  - JMeter: 부하 테스트 수행
-  - VisualVM: CPU, Memory 프로파일링
-
-**JMeter 시나리오**
-1. **Thread 설정**
-  - Thread 수: 200
-  - Ramp-up: 30초
-  - Loop: 20회
-
-2. **시나리오 구성**
+| 분야 | 상세 스펙                                                     |
+|------|-----------------------------------------------------------|
+| **Backend & DevOps** | Java, Spring Boot,JPA, Docker                             |
+| **Database** | MariaDB , Redis                                    |
+| **Infrastructure** | App(2C/2G), DB(2C/2G), Redis(1C/1G)                       |
+| **성능 목표** | • 응답시간 300ms 이하<br>• 동시접속 200명<br>• TPS 25+               |
+| **테스트 환경** | • JMeter: 200 스레드, 30초 램프업, 20회 반복<br>• VisualVM: CPU/Memory 프로파일링 |
+#### 시나리오 구성
   - 로그인 → 인기글 목록 조회 → 인기글 상세 조회 → Root 댓글 조회 → 하위 전체 대댓글 조회 → 포스트 좋아요/취소 → 댓글/대댓글 작성
 
 ## 💡 최적화 성과
